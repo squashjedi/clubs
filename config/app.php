@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'forbidden_slugs' => [
+        'your',
+        'confirm-password',
+        'dashboard',
+        'forgot-password',
+        'login',
+        'logout',
+        'register',
+        'settings',
+        'up',
+        'verify-email',
+    ]
+
 ];

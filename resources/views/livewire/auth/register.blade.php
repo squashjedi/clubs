@@ -1,12 +1,16 @@
 <?php
 
+use Carbon\Carbon;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
+use App\Enums\Gender;
+use Livewire\Volt\Component;
+use App\Rules\AgeRestriction;
+use Illuminate\Validation\Rule;
+use Livewire\Attributes\Layout;
+use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
-use Livewire\Attributes\Layout;
-use Livewire\Volt\Component;
+use Illuminate\Auth\Events\Registered;
 
 new #[Layout('components.layouts.auth')] class extends Component {
     public string $name = '';
@@ -42,11 +46,11 @@ new #[Layout('components.layouts.auth')] class extends Component {
     <x-auth-session-status class="text-center" :status="session('status')" />
 
     <form wire:submit="register" class="flex flex-col gap-6">
-        <!-- Name -->
+        <!-- Full name -->
         <flux:input
             wire:model="name"
             id="name"
-            :label="__('Name')"
+            :label="__('Full name')"
             type="text"
             name="name"
             required
@@ -67,29 +71,33 @@ new #[Layout('components.layouts.auth')] class extends Component {
             placeholder="email@example.com"
         />
 
-        <!-- Password -->
-        <flux:input
-            wire:model="password"
-            id="password"
-            :label="__('Password')"
-            type="password"
-            name="password"
-            required
-            autocomplete="new-password"
-            placeholder="Password"
-        />
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Password -->
+            <flux:input
+                wire:model="password"
+                id="password"
+                :label="__('Password')"
+                type="password"
+                name="password"
+                required
+                autocomplete="new-password"
+                placeholder="Password"
+                viewable
+            />
 
-        <!-- Confirm Password -->
-        <flux:input
-            wire:model="password_confirmation"
-            id="password_confirmation"
-            :label="__('Confirm password')"
-            type="password"
-            name="password_confirmation"
-            required
-            autocomplete="new-password"
-            placeholder="Confirm password"
-        />
+            <!-- Confirm Password -->
+            <flux:input
+                wire:model="password_confirmation"
+                id="password_confirmation"
+                :label="__('Confirm password')"
+                type="password"
+                name="password_confirmation"
+                required
+                autocomplete="new-password"
+                placeholder="Confirm password"
+                viewable
+            />
+        </div>
 
         <div class="flex items-center justify-end">
             <flux:button type="submit" variant="primary" class="w-full">

@@ -11,20 +11,8 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
-    --color-zinc-50: #fafafa;
-    --color-zinc-100: #f5f5f5;
-    --color-zinc-200: #e5e5e5;
-    --color-zinc-300: #d4d4d4;
-    --color-zinc-400: #a3a3a3;
-    --color-zinc-500: #737373;
-    --color-zinc-600: #525252;
-    --color-zinc-700: #404040;
-    --color-zinc-800: #262626;
-    --color-zinc-900: #171717;
-    --color-zinc-950: #0a0a0a;
-
-    --color-accent: var(--color-neutral-800);
-    --color-accent-content: var(--color-neutral-800);
+    --color-accent: var(--color-zinc-800);
+    --color-accent-content: var(--color-zinc-800);
     --color-accent-foreground: var(--color-white);
 }
 
@@ -32,9 +20,10 @@
     .dark {
         --color-accent: var(--color-white);
         --color-accent-content: var(--color-white);
-        --color-accent-foreground: var(--color-neutral-800);
+        --color-accent-foreground: var(--color-zinc-800);
     }
 }
+
 
 @layer base {
 
@@ -47,20 +36,53 @@
     }
 }
 
-[data-flux-field] {
+.text-mute {
+    @apply text-gray-400 dark:text-gray-400;
+}
+
+/*[data-flux-field] {
     @apply grid gap-2;
 }
 
 [data-flux-label] {
     @apply  !mb-0 !leading-tight;
-}
+}*/
 
 input:focus[data-flux-control],
 textarea:focus[data-flux-control],
 select:focus[data-flux-control] {
-    @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+    @apply outline-hidden ring-2 ring-accent ring-offset-accent-foreground;
 }
 
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+button,
+[data-flux-button],
+[data-flux-command-item],
+[data-flux-radio-cards],
+[data-flux-switch],
+[data-flux-table-sortable] {
+    @apply cursor-pointer;
+}
+
+[data-flux-text] {
+    @apply text-sm/6;
+}
+
+ui-select#search-club {
+    ui-option div {
+        @apply hidden;
+    }
+    button {
+        @apply hidden;
+    }
+    input {
+        @apply pr-3;
+    }
+}
+
+dialog {
+    @apply min-[542px]:mx-auto min-[0px]:mx-6;
+}

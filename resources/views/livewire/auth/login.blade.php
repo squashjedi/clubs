@@ -1,5 +1,6 @@
 <?php
 
+use Flux\Flux;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -40,7 +41,12 @@ new #[Layout('components.layouts.auth')] class extends Component {
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
 
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+        Flux::toast(
+            variant: 'success',
+            text: 'Hi ' . auth()->user()->first_name . ', welcome back!',
+        );
+
+        $this->redirectRoute('dashboard', navigate: true);
     }
 
     /**
