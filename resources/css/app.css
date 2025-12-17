@@ -94,7 +94,7 @@ table[data-flux-table] > thead:first-child th:last-child, table[data-flux-table]
 }
 
 .modal {
-    @apply w-auto max-w-[475px] min-[525px]:mx-auto min-[0px]:mx-4;
+    @apply max-w-[475px] min-[525px]:mx-auto min-[0px]:mx-4;
 }
 
 .tooltip {
