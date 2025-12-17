@@ -1,10 +1,7 @@
-<div class="flex items-center justify-between">
+<div>
+    <flux:badge color="zinc">{{ $league->sport->name }}</flux:badge>
     <div class="flex items-center gap-2">
         <x-ui.typography.h3>{{ $league->name }}</x-ui.typography.h3>
-        <flux:button href="{{ route('clubs.admin.leagues.edit', [ $club, $league ]) }}" icon="pencil-square" variant="filled" wire:navigate />
+        <flux:badge as="button" href="{{ route('clubs.backend.leagues.edit', [ $club, $league ]) }}" variant="solid" size="sm" color="zinc" wire:navigate>{{ __('Edit') }}</flux:badge>
     </div>
-    <flux:navbar>
-        <flux:navbar.item href="#">Latest</flux:navbar.item>
-        <flux:navbar.item href="{{ route('clubs.admin.leagues.sessions', [ $club, $league ]) }}" :current="request()->routeIs('clubs.admin.leagues.sessions') || request()->routeIs('clubs.admin.leagues.sessions.*')" wire:navigate>Sessions</flux:navbar.item>
-    </flux:navbar>
 </div>

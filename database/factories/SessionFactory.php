@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\League;
+use App\Models\TallyUnit;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,8 +19,11 @@ class SessionFactory extends Factory
     public function definition(): array
     {
         return [
-            'starting_at' => now(),
-            'ending_at' => now(),
+            'league_id' => fn () => League::factory()->create(),
+            'timezone' => 'Europe/London',
+            'starts_at' => fake()->dateTime(),
+            'ends_at' => fake()->dateTime(),
+            'structure' => [],
         ];
     }
 }

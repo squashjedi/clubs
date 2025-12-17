@@ -134,6 +134,8 @@ return [
         'settings',
         'up',
         'verify-email',
-    ]
+    ],
+
+    'table_order_change_date' => env('TABLE_ORDER_CHANGE_DATE')
 
 ];

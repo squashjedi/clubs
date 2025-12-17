@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Club;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,9 +18,11 @@ class MemberFactory extends Factory
     public function definition(): array
     {
         return [
+            'club_id' => fn () => Club::factory()->create(),
             'club_member_id' => 1,
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
+            'tel_no' => fake()->phoneNumber(),
         ];
     }
 }

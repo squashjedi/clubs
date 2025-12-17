@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Club;
-use App\Models\Member;
+use App\Models\Player;
 use App\Models\Invitation;
 use App\Mail\InvitationEmail;
 use Illuminate\Bus\Queueable;
@@ -22,16 +22,17 @@ class SendInvitationMessage implements ShouldQueue
      *
      * @return void
      */
-    public function __construct(public Invitation $invitation, public Club $club, public Member $member)
-    {
-        //
-    }
+    public function __construct(
+        public Invitation $invitation,
+        public Club $club,
+        public Player $player
+    ) { }
 
     /**
      * Execute the job.
      */
     public function handle(): void
     {
-        Mail::to($this->invitation->email)->queue(new InvitationEmail($this->invitation, $this->club, $this->member));
+        Mail::to($this->invitation->email)->queue(new InvitationEmail($this->invitation, $this->club, $this->player));
     }
 }

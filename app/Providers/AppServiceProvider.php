@@ -2,10 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\Club;
 use Illuminate\View\View;
+use Illuminate\View\Factory;
 use Illuminate\Support\Facades;
 use App\InvitationCodeGenerator;
+use Illuminate\Support\Facades\Route;
 use App\RandomInvitationCodeGenerator;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Relations\Relation;
 
@@ -22,18 +26,17 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+    public function boot(Factory $view): void
     {
-        Relation::enforceMorphMap([
-            'club' => 'App\Models\Club',
-            'sport' => 'App\Models\Sport',
-        ]);
+        Model::automaticallyEagerLoadRelationships();
 
-        Facades\View::composer('components.layouts.club.admin.app', function (View $view) {
+        Route::model('club', Club::class);
+
+        Facades\View::composer('layouts.club-admin', function (View $view) {
             $view->with('club', request('club'));
         });
 
-        Facades\View::composer('components.layouts.club.front.app', function (View $view) {
+        Facades\View::composer('layouts.club-front', function (View $view) {
             $view->with('club', request('club'));
         });
     }

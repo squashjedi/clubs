@@ -9,9 +9,8 @@ test('authenticated users can visit the dashboard', function () {
 
     $this->actingAs($user);
 
-    $response = $this->get('dashboard');
-
-    $response->assertRedirect(route('user.clubs.follow'));
+    $this->get('dashboard')
+        ->assertRedirect(route('your.clubs.follow'));
 });
 
 test('guests are redirected to the login page', function () {

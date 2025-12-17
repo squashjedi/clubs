@@ -3,7 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Club;
-use App\Models\Member;
+use App\Models\Player;
 use App\Models\Invitation;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -20,7 +20,7 @@ class InvitationEmail extends Mailable
      *
      * @return void
      */
-    public function __construct(public Invitation $invitation, public Club $club, public Member $member)
+    public function __construct(public Invitation $invitation, public Club $club, public Player $player)
     {
         //
     }
@@ -33,7 +33,7 @@ class InvitationEmail extends Mailable
     public function envelope()
     {
         return new Envelope(
-            subject: 'Invitation to submit results',
+            subject: 'Invitation to claim a player',
         );
     }
 

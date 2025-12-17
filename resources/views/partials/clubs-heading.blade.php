@@ -6,7 +6,7 @@
         </div>
         <div class="flex justify-end">
             <flux:button
-                :href="route('user.clubs.create')"
+                :href="route('your.clubs.create')"
                 variant="primary"
                 wire:navigate
             >

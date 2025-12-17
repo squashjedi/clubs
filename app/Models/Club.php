@@ -5,10 +5,9 @@ namespace App\Models;
 use App\Traits\Helpers;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -33,17 +32,28 @@ class Club extends Model
 
     public function admin(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function applicants(): HasMany
+    {
+        return $this->hasMany(Applicant::class);
+    }
+
+    public function players(): BelongsToMany
+    {
+        return $this->belongsToMany(Player::class)
+            ->using(ClubPlayer::class)
+            ->withTimestamps()
+            ->withPivot([
+                'club_player_id',
+                'deleted_at'
+            ]);
     }
 
     public function members(): HasMany
     {
         return $this->hasMany(Member::class);
-    }
-
-    public function sports(): BelongsToMany
-    {
-        return $this->belongsToMany(Sport::class);
     }
 
     public function users(): BelongsToMany
@@ -54,6 +64,17 @@ class Club extends Model
     public function leagues(): HasMany
     {
         return $this->hasMany(League::class);
+    }
+
+    public function leagueSports()
+    {
+        return DB::table('sports')
+            ->select('sports.*')
+            ->join('leagues', 'leagues.sport_id', '=', 'sports.id')
+            ->where('leagues.club_id', $this->id)
+            ->distinct()
+            ->orderBy('sports.name')
+            ->get();
     }
 
     public function user($user_id): User | null

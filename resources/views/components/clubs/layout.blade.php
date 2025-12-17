@@ -1,8 +1,8 @@
 <div class="flex items-start max-md:flex-col">
     <div class="mr-10 w-full pb-4 md:w-[220px]">
         <flux:navlist>
-            <flux:navlist.item :href="route('dashboard')" :current="request()->routeIs('user.clubs.follow')" wire:navigate>{{ __('Follow') }}</flux:navlist.item>
-            <flux:navlist.item :href="route('user.clubs.administrate')" wire:navigate :current="request()->routeIs('user.clubs.administrate')">{{ __('Administrate') }}</flux:navlist.item>
+            <flux:navlist.item :href="route('dashboard')" :current="request()->routeIs('your.clubs.follow')" wire:navigate>{{ __('Follow') }}</flux:navlist.item>
+            <flux:navlist.item :href="route('your.clubs.administrate')" wire:navigate :current="request()->routeIs('your.clubs.administrate')">{{ __('Administrate') }}</flux:navlist.item>
         </flux:navlist>
     </div>
 

@@ -2,17 +2,17 @@
     <flux:button
         variant="filled"
         size="sm"
-        :href="route('clubs.admin', [ $club ])"
+        href="{{ route('club.admin', [$club]) }}"
         icon-trailing="pencil"
         icon-variant="outline"
         wire:navigate
-    />
-</div>
-<div class="hidden md:block">
-    <flux:button
+        />
+    </div>
+    <div class="hidden md:block">
+        <flux:button
         variant="filled"
         size="sm"
-        :href="route('clubs.admin', [ $club ])"
+        href="{{ route('club.admin', [$club]) }}"
         icon-trailing="pencil"
         icon-variant="outline"
         wire:navigate

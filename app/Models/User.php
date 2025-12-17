@@ -19,8 +19,12 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasFactory, Notifiable, Helpers;
 
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
+        'gender',
+        'dob',
+        'tel_no',
         'password',
     ];
 
@@ -39,15 +43,16 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    /**
-     * Get the user's initials
-     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => "{$this->first_name} {$this->last_name}"
+        );
+    }
+
     public function initials(): string
     {
-        return Str::of($this->name)
-            ->explode(' ')
-            ->map(fn (string $name) => Str::of($name)->substr(0, 1))
-            ->implode('');
+        return Str::of($this->first_name)->substr(0, 1).Str::of($this->last_name)->substr(0, 1);
     }
 
     public function clubsAdmin(): HasMany
@@ -58,5 +63,21 @@ class User extends Authenticatable implements MustVerifyEmail
     public function clubs(): BelongsToMany
     {
         return $this->belongsToMany(Club::class)->withTimestamps();
+    }
+
+    public function players(): BelongsToMany
+    {
+        return $this->belongsToMany(Player::class)
+            ->using(PlayerUser::class)
+            ->withPivot('relationship');
+    }
+
+    public function playersNotInClub(Club $club)
+    {
+        return $this->players()
+            ->whereDoesntHave('clubs', function ($q) use ($club) {
+                $q->whereKey($club->id);
+            })
+            ->get();
     }
 }

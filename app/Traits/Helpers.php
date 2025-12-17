@@ -34,8 +34,17 @@ trait Helpers {
 	{
 		return $date->format(
 			$date->year === now()->year
-				? 'M d, g:i A'
-				: 'M d, Y, g:i A'
+				? 'M d'
+				: 'M d, Y'
+		);
+	}
+
+	public function datetimeForHumans($date)
+	{
+		return $date->format(
+			$date->year === now()->year
+				? 'd M @ H:i A'
+				: 'd M, Y @ H:i A'
 		);
 	}
 

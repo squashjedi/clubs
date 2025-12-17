@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Sport;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +18,8 @@ class TallyUnitFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => fake()->name(),
+            'key' => fake()->name(),
         ];
     }
 }

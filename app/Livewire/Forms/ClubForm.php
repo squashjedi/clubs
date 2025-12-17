@@ -2,14 +2,12 @@
 
 namespace App\Livewire\Forms;
 
-use Flux\Flux;
 use Livewire\Form;
 use App\Models\Club;
-use App\Models\Sport;
 use App\Rules\ForbiddenSlugs;
 use Illuminate\Validation\Rule;
-use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class ClubForm extends Form
 {
@@ -17,23 +15,13 @@ class ClubForm extends Form
 
     public string $name;
 
-    public array $sports;
-
     public string $timezone = "Europe/London";
 
     protected function rules()
     {
         return [
             'name' => ['required', Rule::unique('clubs')->ignore(isset($this->club) ? $this->club->id : null), 'min:3', 'max:50', new ForbiddenSlugs],
-            'sports' => ['array', 'required'],
             'timezone' => ['required'],
-        ];
-    }
-
-    protected function messages()
-    {
-        return [
-            'sports.required' => 'You must select at least one sport.'
         ];
     }
 
@@ -48,7 +36,6 @@ class ClubForm extends Form
     {
         $this->club = $club;
         $this->name = $club->name;
-        $this->sports = collect($club->sports->pluck('id'))->toArray();
         $this->timezone = $club->timezone;
     }
 
@@ -57,12 +44,10 @@ class ClubForm extends Form
         $this->validate();
 
         $club = DB::transaction(function () {
-            $club = auth()->user()->clubsAdmin()->create([
+            $club = Auth::user()->clubsAdmin()->create([
                 'name' => $this->name,
                 'timezone' => $this->timezone,
             ]);
-
-            $club->sports()->attach($this->sports);
 
             return $club;
         });
@@ -74,13 +59,9 @@ class ClubForm extends Form
     {
         $this->validate();
 
-        DB::transaction(function () {
-            $this->club->update([
-                'name' => $this->name,
-                'timezone' => $this->timezone,
-            ]);
-
-            $this->club->sports()->sync($this->sports);
-        });
+        $this->club->update([
+            'name' => $this->name,
+            'timezone' => $this->timezone,
+        ]);
     }
 }

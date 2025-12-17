@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Club;
 use App\Models\Sport;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,6 +19,8 @@ class LeagueFactory extends Factory
     public function definition(): array
     {
         return [
+            'club_id' => fn () => Club::factory()->create(),
+            'club_league_id' => 1,
             'name' => fake()->company(),
             'sport_id' => fn () => Sport::factory()->create(),
         ];

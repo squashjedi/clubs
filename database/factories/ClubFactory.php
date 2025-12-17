@@ -20,7 +20,7 @@ class ClubFactory extends Factory
         return [
             'user_id' => fn () => User::factory()->create(),
             'name' => fake()->company(),
-            'timezone' => fake()->timezone(),
+            'timezone' => 'Europe/London',
         ];
     }
 }
