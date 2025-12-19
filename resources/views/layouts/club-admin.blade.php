@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace("_", "-", app()->getLocale()) }}" class="dark h-full bg-white">
+<html lang="{{ str_replace("_", "-", app()->getLocale()) }}" class="">
     <head>
         @include("partials.head")
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800 text-sm">
+    <body class="">
 
         <flux:modal.trigger name="edit-profile">
     <flux:button>Edit profile</flux:button>
