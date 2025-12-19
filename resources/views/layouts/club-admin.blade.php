@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace("_", "-", app()->getLocale()) }}" class="dark h-full bg-white">
+<html lang="{{ str_replace("_", "-", app()->getLocale()) }}" class="">
     <head>
         @include("partials.head")
     </head>
@@ -155,6 +155,12 @@
                 </div>
             </main>
         </div>
+
+        @persist("toast")
+            <flux:toast.group position="top end">
+                <flux:toast class="!w-76" />
+            </flux:toast.group>
+        @endpersist
 
         @fluxScripts
     </body>
