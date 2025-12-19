@@ -3,7 +3,7 @@
     <head>
         @include("partials.head")
     </head>
-    <body class="bg-white dark:bg-zinc-800 text-sm">
+    <body class="bg-white dark:bg-zinc-800">
 
         <el-dialog>
             <dialog id="sidebar" class="backdrop:bg-transparent lg:hidden">
