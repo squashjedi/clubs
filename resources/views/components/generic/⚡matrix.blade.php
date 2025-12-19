@@ -638,6 +638,24 @@ new class extends Component
                                 <div class="flex items-center gap-1">
                                     @if ($row['deleted_at'])
                                         <flux:badge color="red" size="sm" class="ml-2">WD</flux:badge>
+                                    @endif
+
+                                    <flux:dropdown position="bottom" align="end">
+                                        <flux:button
+                                            icon="ellipsis-vertical"
+                                            size="sm"
+                                        />
+
+                                        <flux:navmenu>
+                                            <flux:navmenu.item href="#" icon="user">Account</flux:navmenu.item>
+                                            <flux:navmenu.item href="#" icon="building-storefront">Profile</flux:navmenu.item>
+                                            <flux:navmenu.item href="#" icon="credit-card">Billing</flux:navmenu.item>
+                                            <flux:navmenu.item href="#" icon="arrow-right-start-on-rectangle">Logout</flux:navmenu.item>
+                                            <flux:navmenu.item href="#" icon="trash" variant="danger">Delete</flux:navmenu.item>
+                                        </flux:navmenu>
+                                    </flux:dropdown>
+
+                                    @if ($row['deleted_at'])
                                         @if (is_null($session->processed_at))
                                             <flux:modal.trigger name="matrix-reinstate-{{ $row['id'] }}">
                                                 <flux:tooltip>
