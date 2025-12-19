@@ -156,12 +156,6 @@
             </main>
         </div>
 
-        @persist("toast")
-            <flux:toast.group position="top end">
-                <flux:toast class="!w-76" />
-            </flux:toast.group>
-        @endpersist
-
         @fluxScripts
     </body>
 </html>
