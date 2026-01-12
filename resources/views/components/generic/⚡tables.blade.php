@@ -340,7 +340,7 @@ new class extends Component
         $isLatestSession = $session->id === $league->latestSession()->first()->id;
     @endphp
     <div class="flex items-center justify-between h-10">
-        <flux:heading size="xl">Tables</flux:heading>
+        <x-headings.page-heading>Tables</x-headings.page-heading>
         @if (is_null($session->processed_at) && $isLatestSession)
             <div class="min-h-10">
                 <livewire:buttons.destroy-tables :$club :$league :$session />

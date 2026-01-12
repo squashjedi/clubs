@@ -419,7 +419,7 @@ new class extends Component
 
         Flux::toast(
             variant: 'success',
-            text: 'Competitor reinstated.'
+            text: 'Player reinstated.'
         );
     }
 
@@ -483,7 +483,7 @@ new class extends Component
 
         Flux::toast(
             variant: 'success',
-            text: 'Competitor removed.'
+            text: 'Player removed.'
         );
     }
 
@@ -640,115 +640,63 @@ new class extends Component
                                         <flux:badge color="red" size="sm" class="ml-2">WD</flux:badge>
                                     @endif
 
-                                    <flux:dropdown position="bottom" align="end">
-                                        <flux:button
-                                            icon="ellipsis-vertical"
-                                            size="sm"
-                                        />
+                                    @if (is_null($session->processed_at))
+                                        <flux:dropdown
+                                            position="bottom"
+                                            align="end"
+                                        >
+                                            <flux:button
+                                                variant="subtle"
+                                                icon="ellipsis-vertical"
+                                                size="xs"
+                                            />
 
-                                        <flux:navmenu>
-                                            <flux:navmenu.item href="#" icon="user">Account</flux:navmenu.item>
-                                            <flux:navmenu.item href="#" icon="building-storefront">Profile</flux:navmenu.item>
-                                            <flux:navmenu.item href="#" icon="credit-card">Billing</flux:navmenu.item>
-                                            <flux:navmenu.item href="#" icon="arrow-right-start-on-rectangle">Logout</flux:navmenu.item>
-                                            <flux:navmenu.item href="#" icon="trash" variant="danger">Delete</flux:navmenu.item>
-                                        </flux:navmenu>
-                                    </flux:dropdown>
-
-                                    @if ($row['deleted_at'])
-                                        @if (is_null($session->processed_at))
-                                            <flux:modal.trigger name="matrix-reinstate-{{ $row['id'] }}">
-                                                <flux:tooltip>
-                                                    <flux:button
-                                                        variant="subtle"
-                                                        size="xs"
+                                            <flux:menu>
+                                                @if ($row['deleted_at'])
+                                                    <flux:menu.item
+                                                        wire:click="reinstate({{ $row['id'] }})"
                                                         icon="circle-plus"
-                                                        class="ml-2"
-                                                    />
-                                                    <flux:tooltip.content>
+                                                    >
                                                         Reinstate
-                                                    </flux:tooltip.content>
-                                                </flux:tooltip>
-                                            </flux:modal.trigger>
-                                        @endif
-
-                                        @teleport('body')
-                                            <flux:modal name="matrix-reinstate-{{ $row['id'] }}" class="modal">
-                                                <form wire:submit="reinstate({{ $row['id'] }})">
-                                                    <x-modals.content>
-                                                        <x-slot:heading>{{ __('Reinstate Competitor') }}</x-slot:heading>
-                                                        <flux:text>Are you sure you wish to reinstate {{ $row->player->name }}?</flux:text>
-                                                        <x-slot:buttons>
-                                                            <flux:button type="submit" variant="primary">{{ __('Reinstate') }}</flux:button>
-                                                        </x-slot:buttons>
-                                                    </x-modals.content>
-                                                </form>
-                                            </flux:modal>
-                                        @endteleport
-
-                                    @else
-                                        @if (is_null($session->processed_at))
-                                            <flux:modal.trigger name="matrix-withdraw-{{ $row['id'] }}">
-                                                <flux:tooltip>
-                                                    <flux:button
-                                                        variant="subtle"
-                                                        size="xs"
+                                                    </flux:menu.item>
+                                                @else
+                                                    <flux:menu.item
+                                                        wire:click="withdraw({{ $row['id'] }})"
                                                         icon="circle-minus"
-                                                        class="ml-2"
-                                                    />
-                                                    <flux:tooltip.content class="tooltip">
+                                                    >
                                                         Withdraw
-                                                    </flux:tooltip.content>
-                                                </flux:tooltip>
-                                            </flux:modal.trigger>
-                                        @endif
+                                                    </flux:menu.item>
+                                                @endif
 
-                                        @teleport('body')
-                                            <flux:modal name="matrix-withdraw-{{ $row['id'] }}" class="modal">
-                                                <form wire:submit="withdraw({{ $row['id'] }})">
-                                                    <x-modals.content>
-                                                        <x-slot:heading>{{ __('Withdraw Competitor') }}</x-slot:heading>
-                                                        <flux:text>All results involving this competitor will be ignored.</flux:text>
-                                                        <flux:text>Are you sure you wish to withdraw {{ $row->player->name }}?</flux:text>
-                                                        <flux:text>You will be able to reinstate the competitor at any time without any results being lost.</flux:text>
-                                                        <x-slot:buttons>
-                                                            <flux:button type="submit" variant="danger">{{ __('Withdraw') }}</flux:button>
-                                                        </x-slot:buttons>
-                                                    </x-modals.content>
-                                                </form>
-                                            </flux:modal>
-                                        @endteleport
-                                    @endif
+                                                @if ($division->contestant_count > 1)
+                                                    <flux:menu.separator />
 
-                                    @if (is_null($session->processed_at) && $division->contestant_count > 1)
-                                        <flux:modal.trigger name="matrix-delete-{{ $row->id }}">
-                                            <flux:tooltip>
-                                                <flux:button
-                                                    variant="subtle"
-                                                    size="xs"
-                                                    icon="trash"
-                                                    icon:variant="outline"
-                                                />
-                                                <flux:tooltip.content>
-                                                    Remove
-                                                </flux:tooltip.content>
-                                            </flux:tooltip>
-                                        </flux:modal.trigger>
+                                                    <flux:modal.trigger name="matrix-delete-{{ $row->id }}">
+                                                        <flux:menu.item
+                                                            variant="danger"
+                                                            icon="trash"
+                                                        >
+                                                            Delete
+                                                        </flux:menu.item>
+                                                    </flux:modal.trigger>
 
-                                        @teleport('body')
-                                            <flux:modal name="matrix-delete-{{ $row->id }}" class="modal">
-                                                <form wire:submit="removeContestant({{ $row->id }})">
-                                                    <x-modals.content>
-                                                        <x-slot:heading>{{ __('Remove Competitor') }}</x-slot:heading>
-                                                        <flux:text>Are you sure you wish to remove {{ $row->player->name }} from this division?</flux:text>
-                                                        <flux:text>All results involving them will be permanently deleted!</flux:text>
-                                                        <x-slot:buttons>
-                                                            <flux:button type="submit" variant="danger">{{ __('Remove') }}</flux:button>
-                                                        </x-slot:buttons>
-                                                    </x-modals.content>
-                                                </form>
-                                            </flux:modal>
-                                        @endteleport
+                                                    @teleport('body')
+                                                        <flux:modal name="matrix-delete-{{ $row->id }}" class="modal">
+                                                            <form wire:submit="removeContestant({{ $row->id }})">
+                                                                <x-modals.content>
+                                                                    <x-slot:heading>{{ __('Remove Competitor') }}</x-slot:heading>
+                                                                    <flux:text>Are you sure you wish to remove {{ $row->player->name }} from this box?</flux:text>
+                                                                    <flux:text>All results involving them will be permanently deleted!</flux:text>
+                                                                    <x-slot:buttons>
+                                                                        <flux:button type="submit" variant="danger">{{ __('Remove') }}</flux:button>
+                                                                    </x-slot:buttons>
+                                                                </x-modals.content>
+                                                            </form>
+                                                        </flux:modal>
+                                                    @endteleport
+                                                @endif
+                                            </flux:menu>
+                                        </flux:dropdown>
                                     @endif
 
                                 </div>
@@ -768,7 +716,7 @@ new class extends Component
                                         <div
                                             @class([
                                                 'absolute inset-0 flex flex-col items-center justify-center',
-                                                'opacity-50 bg-stone-100' => $col['deleted_at'] || $row['deleted_at']
+                                                'opacity-50 bg-red-50' => $col['deleted_at'] || $row['deleted_at']
                                             ])
                                         >
                                             @if ($matrix[$row->id][$col->id]['original_for'] || $matrix[$col->id][$row->id]['original_for'])
@@ -839,7 +787,7 @@ new class extends Component
                     <flux:modal
                         name="edit-result"
                         class="modal"
-                        x-on:close="hasErrors = false"
+                        x-on:close="hasErrors = false;"
                         x-data="{
                             hasErrors: false,
                             init() {
@@ -1053,7 +1001,7 @@ new class extends Component
         </flux:table>
     </div>
 
-    <div wire:loading wire:target.except="save" class="absolute inset-0 z-20 bg-white -my-3.5 opacity-50"></div>
+    <div wire:loading wire:target.except="save, openEdit" class="absolute inset-0 z-20 bg-white -my-3.5 opacity-50"></div>
 
 </div>
 
