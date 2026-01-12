@@ -1479,10 +1479,10 @@ new class extends Component
             });
         "
         x-bind:class="{
-            '!bg-stone-50 sm:!opacity-95 sm:shadow': isStickyAtTop,
+            '!bg-stone-50 !opacity-95 shadow': isStickyAtTop,
             '!bg-stone-50': !isStickyAtTop
         }"
-        class="sm:sticky z-50 sm:top-[88px] grid grid-cols-3 gap-4 transition-all duration-300"
+        class="sticky z-50 top-[88px] grid grid-cols-3 gap-4 transition-all duration-300"
     >
 
         <div class="col-span-3 grid grid-cols-2 sm:col-span-2 gap-4">
