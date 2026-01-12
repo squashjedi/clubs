@@ -1897,6 +1897,7 @@ new class extends Component
                                                     @php
                                                         $divisionPosition = $contestantIndex + 1;
                                                         $slot = $structure[$tierIndex]['divisions'][$divisionIndex]['contestants'][$contestantIndex];
+                                                        $rowKey = 'slot-'.$division['id'].'-'.$contestantIndex.'-'.($slot['contestant']->id ?? 'empty');
                                                     @endphp
                                                     <div
                                                         x-sort:item="{{ $structure[$tierIndex]['divisions'][$divisionIndex]['contestants'][$contestantIndex]['rank'] }}"
@@ -1905,7 +1906,7 @@ new class extends Component
                                                             '!bg-red-50 !border-red-200' => !$slot['contestant'],
                                                             '!border rounded-md flex items-center justify-between gap-2 p-1.5 min-h-10'
                                                         ])
-                                                        wire:key="{{ $contestantIndex }}"
+                                                        wire:key="{{ $rowKey }}"
                                                     >
                                                         <div class="flex-1 flex items-center gap-1">
                                                             <flux:button size="xs" icon="grip" variant="subtle" class="!shrink-0" x-sort:handle />

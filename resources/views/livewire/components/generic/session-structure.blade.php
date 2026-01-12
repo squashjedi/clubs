@@ -1838,7 +1838,8 @@ new class extends Component
                                                 x-sort="$wire.sortSlot($item, $position, {{ $tierIndex }}, {{ $divisionIndex }})"
                                                 class="w-full space-y-1"
                                             >
-                                                @foreach (range(0, $division['contestant_count'] - 1) as $contestantIndex)
+                                                @foreach (range(0, $division['contestants'] - 1) as $contestantIndex)
+                                                    {{ $contestantIndex }}
                                                     @php
                                                         $divisionPosition = $contestantIndex + 1;
                                                         $slot = $structure[$tierIndex]['divisions'][$divisionIndex]['contestants'][$contestantIndex];
