@@ -790,7 +790,7 @@ new class extends Component
                                                 </div>
                                             @endif
                                             <button
-                                                x-on:click.prevent.throttle.300ms="$wire.openEdit({{ $row->id }}, {{ $col->id }})"
+                                                wire:click="openEdit({{ $row->id }}, {{ $col->id }})"
                                                 wire:loading.attr="disabled"
                                                 wire:target="openEdit"
                                                 class="absolute inset-0 hover:bg-blue-400 opacity-10 disabled:pointer-events-none"
@@ -807,7 +807,19 @@ new class extends Component
                     <flux:modal
                         name="edit-result"
                         class="modal"
-                        x-on:close="hasErrors = false"
+                        x-on:close="
+                            hasErrors = false;
+                            $nextTick(() => {
+                                        // Clear any lingering loading attributes
+                                        document.querySelectorAll('[wire\\:loading]').forEach(el => {
+                                            el.removeAttribute('wire:loading');
+                                            el.style.display = 'none';
+                                        });
+                                        // Also force Livewire state reset if needed
+                                        $wire.editingHomeId = null;
+                                        $wire.editingAwayId = null;
+                                    })
+                        "
                         x-data="{
                             hasErrors: false,
                             init() {
