@@ -38,7 +38,6 @@ new class extends Component
     public ?int $editingHomeId = null;
     public ?int $editingAwayId = null;
 
-
     public function openEdit(int $homeId, int $awayId): void
     {
         $this->editingHomeId = $homeId;
