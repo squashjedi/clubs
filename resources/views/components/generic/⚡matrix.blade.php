@@ -718,8 +718,8 @@ new class extends Component
                                     {{-- Per-cell loading overlay while openEdit is running --}}
                                     <div
                                         wire:loading
-                                        wire:target="openEdit"
-                                        class="absolute inset-0 z-20 bg-white/60 grid place-items-center pointer-events-none"
+                                        wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
+                                        class="absolute inset-0 z-20 bg-white/60 grid place-items-center"
                                     >
                                         <div class="flex items-center justify-center h-full">
                                             <flux:icon.loading class="size-6" />
@@ -790,7 +790,7 @@ new class extends Component
                                                 </div>
                                             @endif
                                             <button
-                                                wire:click="openEdit({{ $row->id }}, {{ $col->id }})"
+                                                x-on:click.prevent.throttle.300ms="$wire.openEdit({{ $row->id }}, {{ $col->id }})"
                                                 wire:loading.attr="disabled"
                                                 wire:target="openEdit"
                                                 class="absolute inset-0 hover:bg-blue-400 opacity-10 disabled:pointer-events-none"
@@ -807,7 +807,7 @@ new class extends Component
                     <flux:modal
                         name="edit-result"
                         class="modal"
-                        x-on:close="hasErrors = false;opening = false;"
+                        x-on:close="hasErrors = false"
                         x-data="{
                             hasErrors: false,
                             init() {
