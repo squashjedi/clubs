@@ -718,10 +718,10 @@ new class extends Component
                                     {{-- Per-cell loading overlay while openEdit is running --}}
                                     <div
                                         wire:loading
-                                        wire:target="openEdit"
+                                        wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
                                         class="absolute inset-0 z-20 bg-white/60 grid place-items-center"
                                     >
-                                        <div class="flex items-center justify-center h-full pointer-events-none">
+                                        <div class="flex items-center justify-center h-full">
                                             <flux:icon.loading class="size-6" />
                                         </div>
                                     </div>
