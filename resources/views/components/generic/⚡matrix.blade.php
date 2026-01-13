@@ -719,7 +719,7 @@ new class extends Component
                                     <div
                                         wire:loading
                                         wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
-                                        class="absolute inset-0 z-20 bg-white/60 grid place-items-center"
+                                        class="absolute inset-0 z-20 bg-white/60 grid place-items-center pointer-events-none"
                                     >
                                         <div class="flex items-center justify-center h-full">
                                             <flux:icon.loading class="size-6" />
@@ -807,9 +807,7 @@ new class extends Component
                     <flux:modal
                         name="edit-result"
                         class="modal"
-                        x-on:close="
-
-                        "
+                        x-on:close=""
                         x-data="{
                             hasErrors: false,
                             init() {
@@ -1022,7 +1020,6 @@ new class extends Component
         </flux:table>
     </div>
 
-    <div wire:loading wire:target.except="save, openEdit" class="absolute inset-0 z-20 bg-white -my-3.5 opacity-50"></div>
 
 </div>
 
