@@ -790,11 +790,13 @@ new class extends Component
                                                 </div>
                                             @endif
                                             <button
-                                                wire:click="openEdit({{ $row->id }}, {{ $col->id }})"
-                                                wire:loading.attr="disabled"
-                                                wire:target="openEdit"
-                                                class="absolute inset-0 hover:bg-blue-400 opacity-10 disabled:pointer-events-none"
+                                                type="button"
+                                                class="absolute inset-0 hover:bg-blue-400 opacity-10"
+                                                x-on:click.prevent="
+                                                    $dispatch('edit-result:open', { home: {{ $row->id }}, away: {{ $col->id }} })
+                                                "
                                             ></button>
+
                                         @endif
                                     </div>
                                 @endif
@@ -810,214 +812,304 @@ new class extends Component
                         x-on:close=""
                         x-data="{
                             hasErrors: false,
+                            open: false,
+                            loading: false,
+                            home: null,
+                            away: null,
+
                             init() {
-                                // Listen for the open event from Livewire
-                                Livewire.on('open-edit-result', () => {
+                                // when a cell requests the modal
+                                window.addEventListener('edit-result:open', async (e) => {
                                     this.hasErrors = false;
-                                    $flux.modal('edit-result').show();
-                                });
+                                    this.home = e.detail.home
+                                    this.away = e.detail.away
+
+                                    // 1) open immediately
+                                    this.open = true
+                                    this.loading = true
+                                    $flux.modal('edit-result').show()
+
+                                    // 2) now fetch/populate via Livewire
+                                    await $wire.openEdit(this.home, this.away)
+
+                                    // 3) swap skeleton -> form
+                                    this.loading = false
+                                })
+
+                                // when modal closes, reset state
+                                this.$el.addEventListener('close', () => {
+                                    this.open = false
+                                    this.loading = false
+                                    this.home = null
+                                    this.away = null
+                                })
                             }
                         }"
                     >
-                        @if($editingHomeId && $editingAwayId)
-                            @php
-                                $homeId = $editingHomeId;
-                                $awayId = $editingAwayId;
-                                $homeContestant = $this->divisionContestants->firstWhere('id', $homeId);
-                                $awayContestant = $this->divisionContestants->firstWhere('id', $awayId);
-                            @endphp
+                        <!-- Skeleton -->
+                        <template x-if="loading">
+                            <x-modals.content>
+                                <x-slot:heading>{{ __('Submit Result') }}</x-slot:heading>
 
-                            <form wire:submit="save({{ $homeId }}, {{ $awayId }})" class="space-y-6">
-                                <x-modals.content>
-                                    <x-slot:heading>{{ __('Submit Result') }}</x-slot:heading>
+                                <div>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <flux:field>
+                                            <flux:label>{{ __('Match Date') }}</flux:label>
+                                            <flux:skeleton class="h-10 w-40" />
+                                        </flux:field>
+                                        <flux:field>
+                                            <flux:label>{{ __('Time') }}</flux:label>
+                                            <flux:skeleton class="h-10 w-[122px]" />
+                                        </flux:field>
+                                    </div>
+                                </div>
 
-                                    <div>
-                                        <div class="flex items-center justify-center gap-2">
-                                            <flux:field>
-                                                <flux:label>{{ __('Match Date') }}</flux:label>
-                                                <flux:date-picker
-                                                    wire:model="matrix.{{ $homeId }}.{{ $awayId }}.date"
-                                                    :min="$minDate"
-                                                    :max="$maxDate"
-                                                />
-                                            </flux:field>
-                                            <flux:field>
-                                                <flux:label>{{ __('Time') }}</flux:label>
-                                                <flux:time-picker
-                                                    type="input"
-                                                    wire:model="matrix.{{ $homeId }}.{{ $awayId }}.time"
-                                                    time-format="12-hour"
-                                                    :dropdown="false"
-                                                />
-                                            </flux:field>
-                                        </div>
+                                <div class="space-y-2 mt-6">
+                                    <flux:text class="text-center">Best of {{ $league->best_of }} {{ Str::lower($league->tallyUnit->name) }}</flux:text>
 
-                                        @php
-                                            $dateKey = "matrix.$homeId.$awayId.date";
-                                            $timeKey = "matrix.$homeId.$awayId.time";
-                                            $dateErr = $errors->first($dateKey);
-                                            $timeErr = $errors->first($timeKey);
-                                            $msg = $dateErr ?: $timeErr;
-                                        @endphp
+                                    <div class="flex flex-col items-center">
+                                        <!-- HOME -->
+                                        <table>
+                                            <tr>
+                                                <td class="p-1 pl-0 pr-4">
+                                                    <flux:skeleton class="h-10 w-8" />
+                                                </td>
+                                                <td class="p-1">
+                                                    <flux:skeleton class="h-10 w-30" />
+                                                </td>
+                                                <td class="p-1 pr-0">
+                                                    <flux:skeleton class="h-10 w-16" />
+                                                </td>
+                                            </tr>
 
-                                        @if ($msg)
-                                            <div class="text-center">
-                                                <flux:error :message="$msg" />
+                                            <!-- AWAY -->
+                                            <tr>
+                                                <td class="p-1 pl-0 pr-4">
+                                                    <flux:skeleton class="h-10 w-8" />
+                                                </td>
+                                                <td class="p-1">
+                                                    <flux:skeleton class="h-10 w-30" />
+                                                </td>
+                                                <td class="p-1 pr-0">
+                                                    <flux:skeleton class="h-10 w-16" />
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+
+                                    <div class="flex flex-col items-center">
+                                        <flux:text class="text-center w-80 !text-xs">Tick a box if a player didn't turn up so their opponent can claim the points.</flux:text>
+                                    </div>
+                                </div>
+
+                                <x-slot:buttons>
+                                    <flux:skeleton class="h-10 w-[75px]" />
+                                    <flux:skeleton class="h-10 w-[65px]" />
+                                </x-slot:buttons>
+                            </x-modals.content>
+                        </template>
+
+                        <template x-if="!loading" x-cloak>
+                            @if($editingHomeId && $editingAwayId)
+                                @php
+                                    $homeId = $editingHomeId;
+                                    $awayId = $editingAwayId;
+                                    $homeContestant = $this->divisionContestants->firstWhere('id', $homeId);
+                                    $awayContestant = $this->divisionContestants->firstWhere('id', $awayId);
+                                @endphp
+
+                                <form wire:submit="save({{ $homeId }}, {{ $awayId }})" class="space-y-6">
+                                    <x-modals.content>
+                                        <x-slot:heading>{{ __('Submit Result') }}</x-slot:heading>
+
+                                        <div>
+                                            <div class="flex items-center justify-center gap-2">
+                                                <flux:field>
+                                                    <flux:label>{{ __('Match Date') }}</flux:label>
+                                                    <flux:date-picker
+                                                        wire:model="matrix.{{ $homeId }}.{{ $awayId }}.date"
+                                                        :min="$minDate"
+                                                        :max="$maxDate"
+                                                    />
+                                                </flux:field>
+                                                <flux:field>
+                                                    <flux:label>{{ __('Time') }}</flux:label>
+                                                    <flux:time-picker
+                                                        type="input"
+                                                        wire:model="matrix.{{ $homeId }}.{{ $awayId }}.time"
+                                                        time-format="12-hour"
+                                                        :dropdown="false"
+                                                    />
+                                                </flux:field>
                                             </div>
-                                        @endif
-                                    </div>
 
-                                    <div class="space-y-2 mt-6">
-                                        <flux:text class="text-center">Best of {{ $league->best_of }} {{ Str::lower($league->tallyUnit->name) }}</flux:text>
+                                            @php
+                                                $dateKey = "matrix.$homeId.$awayId.date";
+                                                $timeKey = "matrix.$homeId.$awayId.time";
+                                                $dateErr = $errors->first($dateKey);
+                                                $timeErr = $errors->first($timeKey);
+                                                $msg = $dateErr ?: $timeErr;
+                                            @endphp
 
-                                        @php
-                                            $homeKey = "matrix.$homeId.$awayId";
-                                            $awayKey = "matrix.$awayId.$homeId";
-                                        @endphp
+                                            @if ($msg)
+                                                <div class="text-center">
+                                                    <flux:error :message="$msg" />
+                                                </div>
+                                            @endif
+                                        </div>
 
-                                        <div
-                                            wire:key="result-state-{{ $homeId }}-{{ $awayId }}"
-                                            x-data="{
-                                                homeChecked: @entangle("matrix.$homeId.$awayId.attended"),
-                                                awayChecked: @entangle("matrix.$awayId.$homeId.attended"),
-                                                homeScore: @entangle("matrix.$homeId.$awayId.for"),
-                                                awayScore: @entangle("matrix.$awayId.$homeId.for"),
-                                                maxScore: {{ $this->maxTally }},
+                                        <div class="space-y-2 mt-6">
+                                            <flux:text class="text-center">Best of {{ $league->best_of }} {{ Str::lower($league->tallyUnit->name) }}</flux:text>
 
-                                                setScores(side) {
-                                                    if (side === 'home' && this.homeChecked) {
-                                                        this.homeScore = 0;
-                                                        this.awayScore = this.maxScore;
-                                                    } else if (side === 'away' && this.awayChecked) {
-                                                        this.awayScore = 0;
-                                                        this.homeScore = this.maxScore;
-                                                    }
-                                                },
+                                            @php
+                                                $homeKey = "matrix.$homeId.$awayId";
+                                                $awayKey = "matrix.$awayId.$homeId";
+                                            @endphp
 
-                                                onHomeToggle() {
-                                                    this.homeChecked = !this.homeChecked;
-                                                    if (this.homeChecked) {
-                                                        this.awayChecked = false;
-                                                        this.setScores('home');
-                                                    } else {
-                                                        if (!this.awayChecked) {
-                                                            this.homeScore = '';
-                                                            this.awayScore = '';
-                                                        } else {
-                                                            this.setScores('away');
+                                            <div
+                                                wire:key="result-state-{{ $homeId }}-{{ $awayId }}"
+                                                x-data="{
+                                                    homeChecked: @entangle("matrix.$homeId.$awayId.attended"),
+                                                    awayChecked: @entangle("matrix.$awayId.$homeId.attended"),
+                                                    homeScore: @entangle("matrix.$homeId.$awayId.for"),
+                                                    awayScore: @entangle("matrix.$awayId.$homeId.for"),
+                                                    maxScore: {{ $this->maxTally }},
+
+                                                    setScores(side) {
+                                                        if (side === 'home' && this.homeChecked) {
+                                                            this.homeScore = 0;
+                                                            this.awayScore = this.maxScore;
+                                                        } else if (side === 'away' && this.awayChecked) {
+                                                            this.awayScore = 0;
+                                                            this.homeScore = this.maxScore;
                                                         }
-                                                    }
-                                                },
+                                                    },
 
-                                                onAwayToggle() {
-                                                    this.awayChecked = !this.awayChecked;
-                                                    if (this.awayChecked) {
-                                                        this.homeChecked = false;
-                                                        this.setScores('away');
-                                                    } else {
-                                                        if (!this.homeChecked) {
-                                                            this.homeScore = '';
-                                                            this.awayScore = '';
-                                                        } else {
+                                                    onHomeToggle() {
+                                                        this.homeChecked = !this.homeChecked;
+                                                        if (this.homeChecked) {
+                                                            this.awayChecked = false;
                                                             this.setScores('home');
+                                                        } else {
+                                                            if (!this.awayChecked) {
+                                                                this.homeScore = '';
+                                                                this.awayScore = '';
+                                                            } else {
+                                                                this.setScores('away');
+                                                            }
+                                                        }
+                                                    },
+
+                                                    onAwayToggle() {
+                                                        this.awayChecked = !this.awayChecked;
+                                                        if (this.awayChecked) {
+                                                            this.homeChecked = false;
+                                                            this.setScores('away');
+                                                        } else {
+                                                            if (!this.homeChecked) {
+                                                                this.homeScore = '';
+                                                                this.awayScore = '';
+                                                            } else {
+                                                                this.setScores('home');
+                                                            }
                                                         }
                                                     }
-                                                }
-                                            }"
-                                            class="flex flex-col items-center"
-                                        >
-                                            <!-- HOME -->
-                                            <table>
-                                                <tr>
-                                                    <td class="p-1 pl-0 pr-4">
-                                                        <flux:checkbox
-                                                            @click="onHomeToggle()"
-                                                            x-bind:checked="homeChecked"
-                                                            class="!-mt-px"
-                                                        />
-                                                    </td>
-                                                    <td class="p-1">
-                                                        <flux:heading
-                                                            class="text-right"
-                                                            x-bind:class="{ 'line-through text-gray-400': homeChecked }"
-                                                        >
-                                                            {{ $homeContestant->player->name }}
-                                                        </flux:heading>
-                                                    </td>
-                                                    <td class="p-1 pr-0">
-                                                        <flux:select
-                                                            x-bind:disabled="homeChecked || awayChecked"
-                                                            wire:model="{{ $homeKey }}.for"
-                                                        >
-                                                            <flux:select.option value="">-</flux:select.option>
-                                                            @for ($i = 0; $i <= $this->maxTally; $i++)
-                                                                <flux:select.option value="{{ $i }}">{{ $i }}</flux:select.option>
-                                                            @endfor
-                                                        </flux:select>
-                                                    </td>
-                                                </tr>
+                                                }"
+                                                class="flex flex-col items-center"
+                                            >
+                                                <!-- HOME -->
+                                                <table>
+                                                    <tr>
+                                                        <td class="p-1 pl-0 pr-4">
+                                                            <flux:checkbox
+                                                                @click="onHomeToggle()"
+                                                                x-bind:checked="homeChecked"
+                                                                class="!-mt-px"
+                                                            />
+                                                        </td>
+                                                        <td class="p-1">
+                                                            <flux:heading
+                                                                class="text-right"
+                                                                x-bind:class="{ 'line-through text-gray-400': homeChecked }"
+                                                            >
+                                                                {{ $homeContestant->player->name }}
+                                                            </flux:heading>
+                                                        </td>
+                                                        <td class="p-1 pr-0">
+                                                            <flux:select
+                                                                x-bind:disabled="homeChecked || awayChecked"
+                                                                wire:model="{{ $homeKey }}.for"
+                                                            >
+                                                                <flux:select.option value="">-</flux:select.option>
+                                                                @for ($i = 0; $i <= $this->maxTally; $i++)
+                                                                    <flux:select.option value="{{ $i }}">{{ $i }}</flux:select.option>
+                                                                @endfor
+                                                            </flux:select>
+                                                        </td>
+                                                    </tr>
 
-                                                <!-- AWAY -->
-                                                <tr>
-                                                    <td class="p-1 pl-0 pr-4">
-                                                        <flux:checkbox
-                                                            @click="onAwayToggle()"
-                                                            x-bind:checked="awayChecked"
-                                                            class="!-mt-px"
-                                                        />
-                                                    </td>
-                                                    <td class="p-1">
-                                                        <flux:heading
-                                                            class="text-right"
-                                                            x-bind:class="{ 'line-through text-gray-400': awayChecked }"
-                                                        >
-                                                            {{ $awayContestant->player->name }}
-                                                        </flux:heading>
-                                                    </td>
-                                                    <td class="p-1 pr-0">
-                                                        <flux:select
-                                                            x-bind:disabled="homeChecked || awayChecked"
-                                                            wire:model="{{ $awayKey }}.for"
-                                                        >
-                                                            <flux:select.option value="">-</flux:select.option>
-                                                            @for ($i = 0; $i <= $this->maxTally; $i++)
-                                                                <flux:select.option value="{{ $i }}">{{ $i }}</flux:select.option>
-                                                            @endfor
-                                                        </flux:select>
-                                                    </td>
-                                                </tr>
-                                            </table>
+                                                    <!-- AWAY -->
+                                                    <tr>
+                                                        <td class="p-1 pl-0 pr-4">
+                                                            <flux:checkbox
+                                                                @click="onAwayToggle()"
+                                                                x-bind:checked="awayChecked"
+                                                                class="!-mt-px"
+                                                            />
+                                                        </td>
+                                                        <td class="p-1">
+                                                            <flux:heading
+                                                                class="text-right"
+                                                                x-bind:class="{ 'line-through text-gray-400': awayChecked }"
+                                                            >
+                                                                {{ $awayContestant->player->name }}
+                                                            </flux:heading>
+                                                        </td>
+                                                        <td class="p-1 pr-0">
+                                                            <flux:select
+                                                                x-bind:disabled="homeChecked || awayChecked"
+                                                                wire:model="{{ $awayKey }}.for"
+                                                            >
+                                                                <flux:select.option value="">-</flux:select.option>
+                                                                @for ($i = 0; $i <= $this->maxTally; $i++)
+                                                                    <flux:select.option value="{{ $i }}">{{ $i }}</flux:select.option>
+                                                                @endfor
+                                                            </flux:select>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+
+                                            @if ($errors->has('matrix.*.*.for') || $errors->has('matrix'))
+                                                <flux:error message="{{ __('Invalid Score') }}" class="text-center" />
+                                            @endif
+
+                                            <div class="flex flex-col items-center">
+                                                <flux:text class="text-center w-80 !text-xs">Tick a box if a player didn't turn up so their opponent can claim the points.</flux:text>
+                                            </div>
                                         </div>
 
-                                        @if ($errors->has('matrix.*.*.for') || $errors->has('matrix'))
-                                            <flux:error message="{{ __('Invalid Score') }}" class="text-center" />
-                                        @endif
-
-                                        <div class="flex flex-col items-center">
-                                            <flux:text class="text-center w-80 !text-xs">Tick a box if a player didn't turn up so their opponent can claim the points.</flux:text>
-                                        </div>
-                                    </div>
-
-                                    <x-slot:buttons>
-                                        <flux:button
-                                            wire:click="delete({{ $homeId }}, {{ $awayId }})"
-                                            type="button"
-                                            wire:loading.attr="disabled"
-                                            variant="danger"
-                                        >
-                                            {{ __('Delete') }}
-                                        </flux:button>
-                                        <flux:button
-                                            type="submit"
-                                            variant="primary"
-                                            :loading="false"
-                                        >
-                                            {{ __('Save') }}
-                                        </flux:button>
-                                    </x-slot:buttons>
-                                </x-modals.content>
-                            </form>
-                        @endif
+                                        <x-slot:buttons>
+                                            <flux:button
+                                                wire:click="delete({{ $homeId }}, {{ $awayId }})"
+                                                type="button"
+                                                wire:loading.attr="disabled"
+                                                variant="danger"
+                                            >
+                                                {{ __('Delete') }}
+                                            </flux:button>
+                                            <flux:button
+                                                type="submit"
+                                                variant="primary"
+                                                :loading="false"
+                                            >
+                                                {{ __('Save') }}
+                                            </flux:button>
+                                        </x-slot:buttons>
+                                    </x-modals.content>
+                                </form>
+                            @endif
+                        </template>
                     </flux:modal>
                 @endteleport
 
