@@ -232,7 +232,8 @@ new class extends Component
 
         $this->resetDivision();
         $this->matrix = $this->buildMatrix();
-        Flux::modals()->close();
+
+        Flux::modal('edit-result')->close();
 
         $this->editingHomeId = null;
         $this->editingAwayId = null;
