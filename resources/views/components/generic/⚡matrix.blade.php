@@ -712,6 +712,17 @@ new class extends Component
                                 ])
                             >
                                 @if ($row->id !== $col->id)
+                                    {{-- Per-cell loading overlay while openEdit is running --}}
+                                    <div
+                                        wire:loading
+                                        wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
+                                        class="absolute inset-0 z-20 bg-white/60 grid place-items-center"
+                                    >
+                                        <div class="flex items-center justify-center h-full">
+                                            <flux:icon.loading class="size-6" />
+                                        </div>
+                                    </div>
+
                                     <div class="absolute inset-0 flex items-center justify-center">
                                         <div
                                             @class([
@@ -759,6 +770,8 @@ new class extends Component
                                             @if (! ($matrix[$row->id][$col->id]['original_for'] || $matrix[$col->id][$row->id]['original_for']))
                                                 <div class="flex items-center justify-center size-full">
                                                     <flux:icon.plus-circle
+                                                        wire:loading.class="hidden"
+                                                        wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
                                                         variant="solid"
                                                         class="size-8 text-blue-300"
                                                     />
@@ -766,6 +779,8 @@ new class extends Component
                                             @else
                                                 <div class="absolute top-0.5 right-0.5">
                                                     <flux:icon.pencil-square
+                                                        wire:loading.class="hidden"
+                                                        wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
                                                         variant="outline"
                                                         class="size-5 text-blue-300"
                                                     />
@@ -773,8 +788,10 @@ new class extends Component
                                             @endif
                                             <button
                                                 x-on:click="$wire.openEdit({{ $row->id }}, {{ $col->id }});"
-                                                class="absolute inset-0 hover:bg-blue-400 opacity-10"
-                                            />
+                                                wire:loading.attr="disabled"
+                                                wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
+                                                class="absolute inset-0 hover:bg-blue-400 opacity-10 disabled:pointer-events-none"
+                                            ></button>
                                         @endif
                                     </div>
                                 @endif
@@ -787,7 +804,7 @@ new class extends Component
                     <flux:modal
                         name="edit-result"
                         class="modal"
-                        x-on:close="hasErrors = false;"
+                        x-on:close="hasErrors = false;opening = false;"
                         x-data="{
                             hasErrors: false,
                             init() {
