@@ -235,6 +235,9 @@ new class extends Component
         $this->matrix = $this->buildMatrix();
         Flux::modals()->close();
 
+        $this->editingHomeId = null;
+        $this->editingAwayId = null;
+
         Flux::toast(
             variant: 'success',
             text: 'Result deleted.'
@@ -1000,7 +1003,6 @@ new class extends Component
                                             wire:click="delete({{ $homeId }}, {{ $awayId }})"
                                             type="button"
                                             variant="danger"
-                                            x-bind:isLoading="true"
                                         >
                                             {{ __('Delete') }}
                                         </flux:button>
