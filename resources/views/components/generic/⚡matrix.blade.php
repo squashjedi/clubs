@@ -836,17 +836,18 @@ new class extends Component
                         <!-- Skeleton -->
                         <template x-if="loading">
                             <x-modals.content>
+                                <flux:skeleton.group animate="shimmer">
                                 <x-slot:heading>{{ __('Submit Result') }}</x-slot:heading>
 
                                 <div>
                                     <div class="flex items-center justify-center gap-2">
                                         <flux:field>
                                             <flux:label>{{ __('Match Date') }}</flux:label>
-                                            <flux:skeleton class="h-10 w-40" />
+                                            <flux:skeleton  class="h-10 w-40" />
                                         </flux:field>
                                         <flux:field>
                                             <flux:label>{{ __('Time') }}</flux:label>
-                                            <flux:skeleton class="h-10 w-[122px]" />
+                                            <flux:skeleton  class="h-10 w-[122px]" />
                                         </flux:field>
                                     </div>
                                 </div>
@@ -859,26 +860,26 @@ new class extends Component
                                         <table>
                                             <tr>
                                                 <td class="p-1 pl-0 pr-4">
-                                                    <flux:skeleton class="h-10 w-8" />
+                                                    <flux:skeleton  class="h-10 w-8" />
                                                 </td>
                                                 <td class="p-1">
-                                                    <flux:skeleton class="h-10 w-30" />
+                                                    <flux:skeleton  class="h-10 w-30" />
                                                 </td>
                                                 <td class="p-1 pr-0">
-                                                    <flux:skeleton class="h-10 w-16" />
+                                                    <flux:skeleton  class="h-10 w-16" />
                                                 </td>
                                             </tr>
 
                                             <!-- AWAY -->
                                             <tr>
                                                 <td class="p-1 pl-0 pr-4">
-                                                    <flux:skeleton class="h-10 w-8" />
+                                                    <flux:skeleton  class="h-10 w-8" />
                                                 </td>
                                                 <td class="p-1">
-                                                    <flux:skeleton class="h-10 w-30" />
+                                                    <flux:skeleton  class="h-10 w-30" />
                                                 </td>
                                                 <td class="p-1 pr-0">
-                                                    <flux:skeleton class="h-10 w-16" />
+                                                    <flux:skeleton  class="h-10 w-16" />
                                                 </td>
                                             </tr>
                                         </table>
@@ -890,9 +891,10 @@ new class extends Component
                                 </div>
 
                                 <x-slot:buttons>
-                                    <flux:skeleton class="h-10 w-[75px]" />
-                                    <flux:skeleton class="h-10 w-[65px]" />
+                                    <flux:skeleton  class="h-10 w-[75px]" />
+                                    <flux:skeleton  class="h-10 w-[65px]" />
                                 </x-slot:buttons>
+                                </flux:skeleton.group>
                             </x-modals.content>
                         </template>
 
