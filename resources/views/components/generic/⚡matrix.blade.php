@@ -836,65 +836,65 @@ new class extends Component
                         <!-- Skeleton -->
                         <template x-if="loading">
                             <x-modals.content>
-                                <flux:skeleton.group animate="shimmer">
                                 <x-slot:heading>{{ __('Submit Result') }}</x-slot:heading>
+                                <flux:skeleton.group animate="pulse">
 
-                                <div>
-                                    <div class="flex items-center justify-center gap-2">
-                                        <flux:field>
-                                            <flux:label>{{ __('Match Date') }}</flux:label>
-                                            <flux:skeleton  class="h-10 w-40" />
-                                        </flux:field>
-                                        <flux:field>
-                                            <flux:label>{{ __('Time') }}</flux:label>
-                                            <flux:skeleton  class="h-10 w-[122px]" />
-                                        </flux:field>
-                                    </div>
-                                </div>
-
-                                <div class="space-y-2 mt-6">
-                                    <flux:text class="text-center">Best of {{ $league->best_of }} {{ Str::lower($league->tallyUnit->name) }}</flux:text>
-
-                                    <div class="flex flex-col items-center">
-                                        <!-- HOME -->
-                                        <table>
-                                            <tr>
-                                                <td class="p-1 pl-0 pr-4">
-                                                    <flux:skeleton  class="h-10 w-8" />
-                                                </td>
-                                                <td class="p-1">
-                                                    <flux:skeleton  class="h-10 w-30" />
-                                                </td>
-                                                <td class="p-1 pr-0">
-                                                    <flux:skeleton  class="h-10 w-16" />
-                                                </td>
-                                            </tr>
-
-                                            <!-- AWAY -->
-                                            <tr>
-                                                <td class="p-1 pl-0 pr-4">
-                                                    <flux:skeleton  class="h-10 w-8" />
-                                                </td>
-                                                <td class="p-1">
-                                                    <flux:skeleton  class="h-10 w-30" />
-                                                </td>
-                                                <td class="p-1 pr-0">
-                                                    <flux:skeleton  class="h-10 w-16" />
-                                                </td>
-                                            </tr>
-                                        </table>
+                                    <div>
+                                        <div class="flex items-center justify-center gap-2">
+                                            <flux:field>
+                                                <flux:label>{{ __('Match Date') }}</flux:label>
+                                                <flux:skeleton  class="h-10 w-40" />
+                                            </flux:field>
+                                            <flux:field>
+                                                <flux:label>{{ __('Time') }}</flux:label>
+                                                <flux:skeleton  class="h-10 w-[122px]" />
+                                            </flux:field>
+                                        </div>
                                     </div>
 
-                                    <div class="flex flex-col items-center">
-                                        <flux:text class="text-center w-80 !text-xs">Tick a box if a player didn't turn up so their opponent can claim the points.</flux:text>
-                                    </div>
-                                </div>
+                                    <div class="space-y-2 mt-6">
+                                        <flux:text class="text-center">Best of {{ $league->best_of }} {{ Str::lower($league->tallyUnit->name) }}</flux:text>
 
-                                <x-slot:buttons>
-                                    <flux:skeleton  class="h-10 w-[75px]" />
-                                    <flux:skeleton  class="h-10 w-[65px]" />
-                                </x-slot:buttons>
+                                        <div class="flex flex-col items-center">
+                                            <!-- HOME -->
+                                            <table>
+                                                <tr>
+                                                    <td class="p-1 pl-0 pr-4">
+                                                        <flux:skeleton  class="h-10 w-8" />
+                                                    </td>
+                                                    <td class="p-1">
+                                                        <flux:skeleton  class="h-10 w-30" />
+                                                    </td>
+                                                    <td class="p-1 pr-0">
+                                                        <flux:skeleton  class="h-10 w-16" />
+                                                    </td>
+                                                </tr>
+
+                                                <!-- AWAY -->
+                                                <tr>
+                                                    <td class="p-1 pl-0 pr-4">
+                                                        <flux:skeleton  class="h-10 w-8" />
+                                                    </td>
+                                                    <td class="p-1">
+                                                        <flux:skeleton  class="h-10 w-30" />
+                                                    </td>
+                                                    <td class="p-1 pr-0">
+                                                        <flux:skeleton  class="h-10 w-16" />
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+
+                                        <div class="flex flex-col items-center">
+                                            <flux:text class="text-center w-80 !text-xs">Tick a box if a player didn't turn up so their opponent can claim the points.</flux:text>
+                                        </div>
+                                    </div>
+
                                 </flux:skeleton.group>
+                                <x-slot:buttons>
+                                    <flux:skeleton animate="pulse" class="h-10 w-[75px]" />
+                                    <flux:skeleton animate="pulse" class="h-10 w-[65px]" />
+                                </x-slot:buttons>
                             </x-modals.content>
                         </template>
 
