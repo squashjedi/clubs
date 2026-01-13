@@ -1001,6 +1001,7 @@ new class extends Component
                                         <flux:button
                                             wire:click="delete({{ $homeId }}, {{ $awayId }})"
                                             type="button"
+                                            wire:loading.attr="disabled"
                                             variant="danger"
                                         >
                                             {{ __('Delete') }}
@@ -1008,6 +1009,7 @@ new class extends Component
                                         <flux:button
                                             type="submit"
                                             variant="primary"
+                                            :loading="false"
                                         >
                                             {{ __('Save') }}
                                         </flux:button>
