@@ -38,7 +38,6 @@ new class extends Component
     public ?int $editingHomeId = null;
     public ?int $editingAwayId = null;
 
-    #[Renderless]
     public function openEdit(int $homeId, int $awayId): void
     {
         $this->editingHomeId = $homeId;
@@ -1006,7 +1005,10 @@ new class extends Component
                                         >
                                             {{ __('Delete') }}
                                         </flux:button>
-                                        <flux:button type="submit" variant="primary">
+                                        <flux:button
+                                            type="submit"
+                                            variant="primary"
+                                        >
                                             {{ __('Save') }}
                                         </flux:button>
                                     </x-slot:buttons>
@@ -1020,6 +1022,7 @@ new class extends Component
         </flux:table>
     </div>
 
+    <div wire:loading wire:target.except="save, openEdit, delete" class="absolute inset-0 z-20 bg-white -my-3.5 opacity-50"></div>
 
 </div>
 
