@@ -790,9 +790,9 @@ new class extends Component
                                                 </div>
                                             @endif
                                             <button
-                                                x-on:click="$wire.openEdit({{ $row->id }}, {{ $col->id }});"
+                                                wire:click="openEdit({{ $row->id }}, {{ $col->id }})"
                                                 wire:loading.attr="disabled"
-                                                wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
+                                                wire:target="openEdit"
                                                 class="absolute inset-0 hover:bg-blue-400 opacity-10 disabled:pointer-events-none"
                                             ></button>
                                         @endif
