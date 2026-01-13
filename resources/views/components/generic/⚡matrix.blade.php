@@ -808,17 +808,7 @@ new class extends Component
                         name="edit-result"
                         class="modal"
                         x-on:close="
-                            hasErrors = false;
-                            $nextTick(() => {
-                                        // Clear any lingering loading attributes
-                                        document.querySelectorAll('[wire\\:loading]').forEach(el => {
-                                            el.removeAttribute('wire:loading');
-                                            el.style.display = 'none';
-                                        });
-                                        // Also force Livewire state reset if needed
-                                        $wire.editingHomeId = null;
-                                        $wire.editingAwayId = null;
-                                    })
+
                         "
                         x-data="{
                             hasErrors: false,
