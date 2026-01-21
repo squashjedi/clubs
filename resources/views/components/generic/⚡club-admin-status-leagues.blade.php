@@ -103,7 +103,7 @@ new class extends Component
     <flux:heading size="lg">Leagues</flux:heading>
 
 
-    <div class="relative">
+    <x-ui.cards.mobile class="relative">
         <div class="absolute h-full inset-y-0 right-0 bg-gradient-to-l from-white to-transparent dark:from-zinc-900 dark:to-transparent"></div>
             <div class="overflow-x-scroll pb-2 h-full w-full">
                 <div>
@@ -178,5 +178,5 @@ new class extends Component
                 </div>
             </div>
         </div>
-    </div>
+    </x-ui.cards.mobile>
 </div>

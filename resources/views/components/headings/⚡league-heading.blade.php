@@ -12,6 +12,10 @@ new class extends Component
 
     public League $league;
 
+    public ?int $currentSessionId = null;
+
+    public bool $onSessionsCreate = false;
+
     public ?string $route = null;
 
     #[Validate('required')]
@@ -25,6 +29,9 @@ new class extends Component
     {
         $this->route = request()->fullUrl();
         $this->leagueName = $this->league->name;
+
+        $this->currentSessionId = request()->route('session')?->id; // might be null
+        $this->onSessionsCreate = request()->routeIs('club.admin.leagues.sessions.create');
     }
 
     public function save()
@@ -83,7 +90,13 @@ new class extends Component
 
                 <x-headings.page-heading>{{ $league->name }}</x-headings.page-heading>
                 <div class="flex items-center">
-                    <flux:button variant="subtle" @click="$wire.editing = true" icon="pencil-square" icon:variant="outline" size="sm" wire:navigate />
+                    <flux:button
+                        variant="subtle"
+                        @click="$wire.editing = true"
+                        icon="pencil-square"
+                        icon:variant="outline"
+                        size="sm"
+                    />
 
                     <flux:dropdown>
                         <flux:tooltip content="Options">
@@ -182,7 +195,10 @@ new class extends Component
                 </flux:dropdown>
             @endif
         </div>
-        @if (request()->route('session')?->id !== $league->latestSession?->id && ! request()->routeIs('club.admin.leagues.sessions.create'))
+        @if (
+            $this->currentSessionId !== $league->latestSession?->id
+            && ! $this->onSessionsCreate
+        )
             <flux:button
                 href="{{ route('club.admin.leagues.sessions.show', [$club, $league, 'session' => $league->latestSession]) }}"
                 variant="filled"
@@ -194,7 +210,7 @@ new class extends Component
             </flux:button>
         @endif
     </div>
-    <div.flex wire:loading class="absolute inset-0 bg-white opacity-50" />
+    <div.flex wire:loading class="absolute inset-0" />
 </div>
 
 <script>

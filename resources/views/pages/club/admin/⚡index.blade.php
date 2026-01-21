@@ -22,7 +22,7 @@ new #[Layout('layouts.club-admin')] class extends Component
         <flux:breadcrumbs.item>Dashboard</flux:breadcrumbs.item>
     </flux:breadcrumbs>
 
-    <div class="grid grid-cols-2 gap-6">
+    <div class="grid grid-cols-2 gap-4">
         <x-cards.club-admin-community-total
             title="Members"
             href="{{ route('club.admin.players', [$club]) }}"

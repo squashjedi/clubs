@@ -19,14 +19,6 @@ new class extends Component
 
     public int $relegateCount;
 
-    public string $tab;
-
-    public ?array $selectedMember = [
-        'id' => null
-    ];
-
-    public array $matrix = [];
-
     public function mount()
     {
         $this->promoteCount = $this->division->promote_count;
@@ -124,7 +116,7 @@ new class extends Component
         </div>
     @endif
 
-    <flux:table class="border">
+    <x-ui.cards.table>
         <flux:table.columns class="bg-stone-50">
             <flux:table.column class="w-0"></flux:table.column>
             <flux:table.column sticky></flux:table.column>
@@ -181,7 +173,7 @@ new class extends Component
                 @endif
             @endforeach
         </flux:table.rows>
-    </flux:table>
+    </x-ui.cards.table>
 
     <div wire:loading class="absolute inset-0 z-20 bg-white -my-3.5 opacity-50"></div>
 

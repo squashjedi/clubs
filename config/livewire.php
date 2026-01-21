@@ -18,11 +18,6 @@ return [
         resource_path('views/livewire'),
     ],
 
-    'blaze' => [
-        'enabled' => true,
-        'foldable' => true, // Auto-optimizes "foldable" components like buttons
-    ],
-
     /*
     |---------------------------------------------------------------------------
     | Component Namespaces
@@ -61,7 +56,7 @@ return [
     |
     */
 
-    'component_placeholder' => 'components.placeholder', // Example: 'placeholders::skeleton'
+    'component_placeholder' => 'livewire.placeholder', // Example: 'placeholders::skeleton'
 
     /*
     |---------------------------------------------------------------------------
@@ -129,11 +124,11 @@ return [
     */
 
     'temporary_file_upload' => [
-        'disk' => null,        // Example: 'local', 's3'              | Default: 'default'
-        'rules' => null,       // Example: ['file', 'mimes:png,jpg']  | Default: ['required', 'file', 'max:12288'] (12MB)
-        'directory' => null,   // Example: 'tmp'                      | Default: 'livewire-tmp'
-        'middleware' => null,  // Example: 'throttle:5,1'             | Default: 'throttle:60,1'
-        'preview_mimes' => [   // Supported file types for temporary pre-signed file URLs...
+        'disk' => env('LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK'), // Example: 'local', 's3'             | Default: 'default'
+        'rules' => null,                                      // Example: ['file', 'mimes:png,jpg'] | Default: ['required', 'file', 'max:12288'] (12MB)
+        'directory' => null,                                  // Example: 'tmp'                     | Default: 'livewire-tmp'
+        'middleware' => null,                                 // Example: 'throttle:5,1'            | Default: 'throttle:60,1'
+        'preview_mimes' => [                                  // Supported file types for temporary pre-signed file URLs...
             'png', 'gif', 'bmp', 'svg', 'wav', 'mp4',
             'mov', 'avi', 'wmv', 'mp3', 'm4a',
             'jpg', 'jpeg', 'mpga', 'webp', 'wma',
@@ -261,4 +256,22 @@ return [
     */
 
     'csp_safe' => false,
+
+    /*
+    |---------------------------------------------------------------------------
+    | Payload Guards
+    |---------------------------------------------------------------------------
+    |
+    | These settings protect against malicious or oversized payloads that could
+    | cause denial of service. The default values should feel reasonable for
+    | most web applications. Each can be set to null to disable the limit.
+    |
+    */
+
+    'payload' => [
+        'max_size' => 1024 * 1024,   // 1MB - maximum request payload size in bytes
+        'max_nesting_depth' => 10,   // Maximum depth of dot-notation property paths
+        'max_calls' => 50,           // Maximum method calls per request
+        'max_components' => 20,      // Maximum components per batch request
+    ],
 ];

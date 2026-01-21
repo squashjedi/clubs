@@ -201,7 +201,7 @@ new class extends Component
             </div>
         @endif
     </div>
-    <div.flex wire:loading class="absolute inset-0 bg-white opacity-50" />
+    <div.flex wire:loading class="absolute inset-0" />
 </div>
 
 <script>

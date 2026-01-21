@@ -4,7 +4,6 @@
 
 <flux:dropdown position="top" align="end" {{ $attributes->merge(['class' => '']) }}>
     <flux:profile
-        class="cursor-pointer"
         :initials="auth()->user()->initials()"
         name="{{ $sidebar ? auth()->user()->name : '' }}"
     />

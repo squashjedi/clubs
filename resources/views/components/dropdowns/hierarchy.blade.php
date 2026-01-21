@@ -50,7 +50,7 @@ new class extends Component
                             @class([
                                 'flex items-center justify-between gap-4'
                             ])
-                            href="{{ route('club.admin.leagues.sessions.tables.division.'.$page, [$club, $league, $session, 'tier' => $tierModal, 'division' => $tierDivision]) }}"
+                            href="{{ route('club.admin.leagues.sessions.tables.division.matrix', [$club, $league, $session, 'tier' => $tierModal, 'division' => $tierDivision]) }}"
                             wire:navigate
                         >
                             <div class="flex items-center">

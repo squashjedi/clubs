@@ -4,7 +4,7 @@
 ])
 
 <div class="flex items-center justify-between gap-4">
-    <div class="@if($contestant['trashed']) opacity-50 @endif">
+    <div class="">
         <flux:heading class="flex items-center gap-1">
             @if ($contestant['is_member'])
                 <flux:link href="{{ route('club.admin.players.edit', [$club, 'player' => $contestant['player_id']]) }}">

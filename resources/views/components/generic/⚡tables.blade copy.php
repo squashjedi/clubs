@@ -644,25 +644,35 @@ new class extends Component
         </div>
         @foreach ($tiers as $tier)
             <div class="relative" wire:key="{{ $tier['id'] }}">
-                <div class="space-y-9 border-t pt-12">
+                <div class="space-y-9 border-t pt-9">
 
                     <!-- Divisions -->
                     @foreach ($tier['divisions'] as $division)
-                        <x-ui.cards.mobile
-                            wire:key="{{ $division['id'] }}"
-                            class="relative"
-                        >
+                        <div class="relative space-y-9 pt-0" wire:key="{{ $division['id'] }}">
 
                             <div class="flex items-center justify-between">
                                 <flux:heading size="lg">{{ $division['name'] }}</flux:heading>
 
-                                <flux:button
-                                    href="{{ route('club.admin.leagues.sessions.tables.division.matrix', ['club' => $club, 'league' => $league, 'session' => $session, 'tier' => $tier['id'], 'division' => $division['id']]) }}" wire:navigate
-                                    variant="primary"
-                                    icon:trailing="arrow-right"
-                                >
-                                    Results & Table
-                                </flux:button>
+
+
+                                <div class="flex flex-col items-center">
+                                    <div class="flex items-center font-medium bg-zinc-800/5 dark:bg-white/10 h-10 p-1 rounded-lg">
+                                        <button
+                                            href="{{ route('club.admin.leagues.sessions.tables.division.table', ['club' => $club, 'league' => $league, 'session' => $session, 'tier' => $tier['id'], 'division' => $division['id']]) }}"
+                                            class="bg-white hover:bg-white text-normal text-zinc-600 shadow-xs px-7 py-1.5 rounded-md cursor-pointer"
+                                            wire:navigate
+                                        >
+                                            Table
+                                        </button>
+                                        <button
+                                            href="{{ route('club.admin.leagues.sessions.tables.division.matrix', ['club' => $club, 'league' => $league, 'session' => $session, 'tier' => $tier['id'], 'division' => $division['id']]) }}"
+                                            class="text-zinc-500 hover:text-zinc-600 px-7 py-1.5 rounded-md cursor-pointer"
+                                            wire:navigate
+                                        >
+                                            Results
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                             <x-ui.cards.table>
                                 <flux:table.columns class="bg-stone-50">
@@ -724,11 +734,12 @@ new class extends Component
                                     @endforeach
                                 </flux:table.rows>
                             </x-ui.cards.table>
-                        </x-ui.cards.mobile>
+                        </div>
                     @endforeach
                 </div>
             </div>
         @endforeach
+        <div wire:loading class="absolute inset-0 z-50 bg-white -my-3.5 opacity-50"></div>
     </div>
 </div>
 

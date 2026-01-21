@@ -1479,8 +1479,8 @@ new class extends Component
             });
         "
         x-bind:class="{
-            '!bg-stone-50 !opacity-95 shadow': isStickyAtTop,
-            '!bg-stone-50': !isStickyAtTop
+            '!bg-white !opacity-95 shadow': isStickyAtTop,
+            '!bg-white': !isStickyAtTop
         }"
         class="sticky z-50 top-[88px] grid grid-cols-3 gap-4 transition-all duration-300"
     >
@@ -1793,7 +1793,7 @@ new class extends Component
                             <flux:card
                                 x-sort:item="{{ $division['id'] }}"
                                 @class([
-                                    '!bg-stone-50 space-y-5 w-full sm:w-108'
+                                    'space-y-5 w-full sm:w-108'
                                 ])
                                 wire:key="{{ $division['id'] }}"
                             >
@@ -1902,7 +1902,7 @@ new class extends Component
                                                     <div
                                                         x-sort:item="{{ $structure[$tierIndex]['divisions'][$divisionIndex]['contestants'][$contestantIndex]['rank'] }}"
                                                         @class([
-                                                            '!bg-white shadow-xs' => $slot['contestant'],
+                                                            '!bg-slate-100 shadow-xs' => $slot['contestant'],
                                                             '!bg-red-50 !border-red-200' => !$slot['contestant'],
                                                             '!border rounded-md flex items-center justify-between gap-2 p-1.5 min-h-10'
                                                         ])

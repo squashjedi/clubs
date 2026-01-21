@@ -207,7 +207,7 @@ new class extends Component
 }; ?>
 
 
-<div class="space-y-6">
+<x-ui.cards.mobile>
     @if ($this->player_with_trashed_count === 0)
         <flux:text>There are no players yet.</flux:text>
     @else
@@ -295,4 +295,4 @@ new class extends Component
             <div wire:loading class="absolute inset-0 bg-white opacity-50" />
         </div>
     @endif
-</div>
+</x-ui.cards.mobile>

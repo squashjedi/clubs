@@ -36,6 +36,6 @@ new #[Layout('layouts.club-admin')] class extends Component
     </flux:breadcrumbs>
 
     <x-containers.club-admin-session :$club :$league :$session :showNavbar="true">
-        <livewire:generic.tables lazy :$club :$league :$session />
+        <livewire:generic.tables :$club :$league :$session />
     </x-containers.club-admin-session>
 </div>

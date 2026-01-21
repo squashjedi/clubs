@@ -1,9 +1,4 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace("_", "-", app()->getLocale()) }}" class="dark bg-white">
-    <head>
-        @include("partials.head")
-    </head>
-    <body class="bg-white dark:bg-zinc-800">
+<x-layouts::app>
 
         <el-dialog>
             <dialog id="sidebar" class="backdrop:bg-transparent lg:hidden">
@@ -65,9 +60,9 @@
         </el-dialog>
 
         <!-- Static sidebar for desktop -->
-        <div class="hidden bg-gray-900 ring-1 ring-white/10 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+        <div class="hidden bg-gray-900 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
             <!-- Sidebar component, swap this element with another sidebar if you like -->
-            <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-black/10 px-6 pb-4">
+            <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4">
                 <div class="flex h-16 shrink-0 items-center">
                     <div class="text-white">Reckify</div>
                 </div>
@@ -109,7 +104,7 @@
 
         <div class="lg:pl-72">
             <div
-                class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-stone-100 px-4 shadow-xs sm:gap-x-6 sm:px-6 lg:px-8 dark:border-white/10 dark:bg-gray-900"
+                class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 bg-gray-900 px-4 shadow-xs sm:gap-x-6 sm:px-6 lg:px-8 dark:border-white/10 dark:bg-gray-900"
             >
                 <button
                     type="button"
@@ -118,7 +113,7 @@
                     class="-m-2.5 p-2.5 text-gray-700 hover:text-gray-900 lg:hidden dark:text-gray-400 dark:hover:text-white"
                 >
                     <span class="sr-only">Open sidebar</span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" data-slot="icon" aria-hidden="true" class="size-6">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" data-slot="icon" aria-hidden="true" class="size-6 text-white">
                         <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </button>
@@ -142,7 +137,7 @@
                         <div aria-hidden="true" class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10 dark:lg:bg-gray-100/10"></div>
 
                         <!-- Profile dropdown -->
-                        <x-auth-dropdown-menu />
+                        <x-auth-dropdown-menu class="bg-gray-700 rounded-lg profile-dark" />
                     </div>
                 </div>
             </div>
@@ -156,12 +151,4 @@
             </main>
         </div>
 
-        @persist("toast")
-            <flux:toast.group position="top end">
-                <flux:toast class="!w-76" />
-            </flux:toast.group>
-        @endpersist
-
-        @fluxScripts
-    </body>
-</html>
+</x-layouts::app>

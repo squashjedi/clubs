@@ -14,6 +14,7 @@ use Livewire\Attributes\On;
 use App\Rules\ValidateScore;
 use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Renderless;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\AddedToLeagueSessionEmail;
@@ -34,6 +35,9 @@ new class extends Component
     ];
 
     public array $matrix = [];
+
+    public int $promoteCount;
+    public int $relegateCount;
 
     public ?int $editingHomeId = null;
     public ?int $editingAwayId = null;
@@ -63,6 +67,38 @@ new class extends Component
     {
         $this->resetDivision();
         $this->matrix = $this->buildMatrix();
+        $this->promoteCount = $this->division->promote_count;
+        $this->relegateCount = $this->division->relegate_count;
+    }
+
+    #[Renderless]
+    public function updatedPromoteCount()
+    {
+        $this->division->update([
+            'promote_count' => $this->promoteCount,
+        ]);
+
+        $this->dispatch('division-movement-updated');
+
+        flux::toast(
+            variant: 'success',
+            text: 'Promote count updated.'
+        );
+    }
+
+    #[Renderless]
+    public function updatedRelegateCount()
+    {
+        $this->division->update([
+            'relegate_count' => $this->relegateCount,
+        ]);
+
+        $this->dispatch('division-movement-updated');
+
+        flux::toast(
+            variant: 'success',
+            text: 'Relegate count updated.'
+        );
     }
 
     #[Computed]
@@ -170,7 +206,7 @@ new class extends Component
             $cellData = [
                 'original_date'  => $dt->format('Y-m-d'),
                 'date'           => $dt->format('Y-m-d'),
-                'formatted_date' => $dt->format('D, j M Y'),
+                'formatted_date' => $dt->format('j M Y'),
                 'original_time'  => $dt->format('H:i'),
                 'time'           => $dt->format('H:i'),
                 'formatted_time' => $dt->format('g:iA'),
@@ -238,7 +274,8 @@ new class extends Component
         $this->editingHomeId = null;
         $this->editingAwayId = null;
 
-        Flux::toast(
+
+        flux::toast(
             variant: 'success',
             text: 'Result deleted.'
         );
@@ -337,7 +374,7 @@ new class extends Component
 
         Flux::modals()->close();
 
-        Flux::toast(
+        flux::toast(
             variant: 'success',
             text: 'Result saved.'
         );
@@ -384,7 +421,7 @@ new class extends Component
 
         $this->dispatch('competitor-added');
 
-        Flux::toast(
+        flux::toast(
             variant: 'success',
             text: 'Player added.'
         );
@@ -402,7 +439,7 @@ new class extends Component
 
         unset($this->divisionContestants, $this->availablePlayers);
 
-        Flux::toast(
+        flux::toast(
             variant: 'success',
             text: 'Player withdrawn.'
         );
@@ -420,7 +457,7 @@ new class extends Component
 
         unset($this->divisionContestants, $this->availablePlayers);
 
-        Flux::toast(
+        flux::toast(
             variant: 'success',
             text: 'Player reinstated.'
         );
@@ -484,7 +521,7 @@ new class extends Component
 
         unset($this->divisionContestants, $this->availablePlayers);
 
-        Flux::toast(
+        flux::toast(
             variant: 'success',
             text: 'Player removed.'
         );
@@ -499,36 +536,25 @@ new class extends Component
     {
         return floor($this->league->best_of / 2) + $this->league->best_of % 2;
     }
+
+    private function indexToLetterUpper(int $i): string
+    {
+        return chr(ord('A') + $i);
+    }
 };
 ?>
 
-<div class="relative space-y-8">
+<x-ui.cards.mobile class="relative">
+
     @php
-        $tier = $division->tier;
-        $tierCount = $session->tiers()->count();
-        $showPromote = $tier->index > 0;
-        $showRelegate = $tier->index + 1 < $tierCount;
+        $showPromote = $division->tier->index > 0;
+        $showRelegate = $division->tier->index + 1 !== $division->session->tiers()->count();
     @endphp
-    @if ($showPromote || $showRelegate || is_null($session->processed_at))
-        <div class="flex items-center justify-between min-h-10">
-            @if ($showPromote || $tier->index + 1 < $tierCount && $division->relegate_count > 0)
-                <div class="sm:flex sm:items-center gap-6">
-                    @if ($showPromote)
-                        <div class="flex items-center gap-0.5">
-                            <flux:text>Promote</flux:text>
-                            <flux:icon.arrow-up variant="micro" class="ml-0.5 size-4 text-green-600" />
-                            <flux:heading class="!text-green-600">{{ $division->promote_count }}</flux:heading>
-                        </div>
-                    @endif
-                    @if ($showRelegate)
-                        <div class="flex items-center gap-0.5">
-                            <flux:text>Relegate</flux:text>
-                            <flux:icon.arrow-down variant="micro" class="ml-0.5 size-4 text-red-600" />
-                            <flux:heading class="!text-red-600">{{ $division->relegate_count }}</flux:heading>
-                        </div>
-                    @endif
-                </div>
-            @endif
+
+    <div class="relative space-y-8">
+        <div class="flex items-center justify-between">
+            <flux:heading size="lg">{{ $this->division->name() }}</flux:heading>
+
             @if (is_null($session->processed_at))
                 <div>
                     <flux:modal.trigger name="add-player">
@@ -578,534 +604,658 @@ new class extends Component
                 </div>
             @endif
         </div>
-    @endif
 
-    @php
-        $tz = $session->timezone ?? $league->club->timezone ?? 'UTC';
-
-        // MIN = session start (local date)
-        $minDate = $session->starts_at->timezone($tz)->toDateString();   // "YYYY-MM-DD"
-
-        // MAX candidates
-        $todayLocal = now()->timezone($tz);
-        $endLocalForMax = optional($session->ends_at)->timezone($tz);
-
-        $maxLocal = collect([$endLocalForMax, $todayLocal])->filter()->min(); // earliest of the two
-        $maxDate  = $maxLocal?->toDateString();
-    @endphp
-
-    <div class="border-l">
-        <flux:table
-            class="border-t border-r border-b"
-        >
-            <flux:table.columns class="bg-stone-50">
-                <flux:table.column
-                    class="sm:sticky sm:left-0 sm:z-10 sm:shadow bg-stone-50"
-                ></flux:table.column>
-                @foreach ($this->divisionContestants as $col)
-                    <flux:table.column wire:key="{{ $col['id'] }}" class="border-l" align="center">
-                        <div class="flex flex-col items-center">
-                            <div class="flex flex-col items-center @if($col['deleted_at']) opacity-50 @endif">
-                                <div>{{ $col->player->first_name }}</div>
-                                <div>{{ $col->player->last_name }}</div>
-                            </div>
-                            @if ($col->deleted_at)
-                                <flux:badge color="red" size="sm" class="mt-1">WD</flux:badge>
-                            @endif
-                        </div>
-                    </flux:table.column>
-                @endforeach
-            </flux:table.columns>
-
-            <flux:table.rows>
-                @foreach ($this->divisionContestants as $row)
-                    <flux:table.row wire:key="{{ $row['id'] }}">
-                        <flux:table.cell
-                            class="sm:sticky sm:left-0 sm:z-10 sm:shadow bg-white h-28"
-                        >
-                            <div class="flex items-center justify-between gap-2">
-                                <div class="flex-1 flex items-center justify-between gap-2">
-                                    <div class="@if($row->deleted_at) opacity-50 @endif">
-                                        <flux:heading class="flex items-center gap-1">
-                                            <x-generic.member
-                                                :$club
-                                                :member="$row->player"
-                                                memberId="{{ $row->player->clubs()->first()->pivot->club_player_id }}"
-                                                :showUser="true"
-                                                :showTelNo="true"
-                                                :isLink="true"
-                                            />
-                                        </flux:heading>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-1">
-                                    @if ($row['deleted_at'])
-                                        <flux:badge color="red" size="sm" class="ml-2">WD</flux:badge>
-                                    @endif
-
-                                    @if (is_null($session->processed_at))
-                                        <flux:dropdown
-                                            position="bottom"
-                                            align="end"
-                                        >
-                                            <flux:button
-                                                variant="subtle"
-                                                icon="ellipsis-vertical"
-                                                size="xs"
-                                            />
-
-                                            <flux:menu>
-                                                @if ($row['deleted_at'])
-                                                    <flux:menu.item
-                                                        wire:click="reinstate({{ $row['id'] }})"
-                                                        icon="circle-plus"
-                                                    >
-                                                        Reinstate
-                                                    </flux:menu.item>
-                                                @else
-                                                    <flux:menu.item
-                                                        wire:click="withdraw({{ $row['id'] }})"
-                                                        icon="circle-minus"
-                                                    >
-                                                        Withdraw
-                                                    </flux:menu.item>
-                                                @endif
-
-                                                @if ($division->contestant_count > 1)
-                                                    <flux:menu.separator />
-
-                                                    <flux:modal.trigger name="matrix-delete-{{ $row->id }}">
-                                                        <flux:menu.item
-                                                            variant="danger"
-                                                            icon="trash"
-                                                        >
-                                                            Delete
-                                                        </flux:menu.item>
-                                                    </flux:modal.trigger>
-
-                                                    @teleport('body')
-                                                        <flux:modal name="matrix-delete-{{ $row->id }}" class="modal">
-                                                            <form wire:submit="removeContestant({{ $row->id }})">
-                                                                <x-modals.content>
-                                                                    <x-slot:heading>{{ __('Remove Competitor') }}</x-slot:heading>
-                                                                    <flux:text>Are you sure you wish to remove {{ $row->player->name }} from this box?</flux:text>
-                                                                    <flux:text>All results involving them will be permanently deleted!</flux:text>
-                                                                    <x-slot:buttons>
-                                                                        <flux:button type="submit" variant="danger">{{ __('Remove') }}</flux:button>
-                                                                    </x-slot:buttons>
-                                                                </x-modals.content>
-                                                            </form>
-                                                        </flux:modal>
-                                                    @endteleport
-                                                @endif
-                                            </flux:menu>
-                                        </flux:dropdown>
-                                    @endif
-
-                                </div>
-                            </div>
-                        </flux:table.cell>
-                        @foreach ($this->divisionContestants as $col)
-                            <flux:table.cell
-                                wire:key="cell-{{ $row->id }}-{{ $col->id }}"
-                                @class([
-                                    'relative size-28 !min-w-28',
-                                    'bg-gray-500' => $row->id === $col->id,
-                                    'border-l' => $row->id !== $col->id,
-                                ])
-                            >
-                                @if ($row->id !== $col->id)
-                                    <div class="absolute inset-0 flex items-center justify-center">
-                                        <div
-                                            @class([
-                                                'absolute inset-0 flex flex-col items-center justify-center',
-                                                'opacity-50 bg-red-50' => $col['deleted_at'] || $row['deleted_at']
-                                            ])
-                                        >
-                                            @if ($matrix[$row->id][$col->id]['original_for'] || $matrix[$col->id][$row->id]['original_for'])
-                                                <flux:text class="!text-xs">{{ $matrix[$row->id][$col->id]['formatted_date'] }}</flux:text>
-                                                <div
-                                                    @class([
-                                                        'flex items-center font-medium text-2xl text-zinc-900',
-                                                    ])
-                                                    size="lg"
-                                                >
-                                                    @if ($matrix[$row->id][$col->id]['original_attended'])
-                                                        <flux:icon.exclamation-circle variant="micro" class="size-4 text-amber-500 mr-0.5" />
-                                                    @elseif ($matrix[$col->id][$row->id]['original_attended'])
-                                                        <div class="size-4"></div>
-                                                    @endif
-                                                    {{ $matrix[$row->id][$col->id]['original_for'] }}-{{ $matrix[$col->id][$row->id]['original_for'] }}
-                                                    @if ($matrix[$col->id][$row->id]['original_attended'])
-                                                        <flux:icon.exclamation-circle variant="micro" class="size-4 text-amber-500 ml-0.5" />
-                                                    @elseif ($matrix[$row->id][$col->id]['original_attended'])
-                                                        <div class="size-4"></div>
-                                                    @endif
-                                                </div>
-                                                <flux:text class="!text-xs">{{ $matrix[$row->id][$col->id]['formatted_time'] }}</flux:text>
-                                            @endif
-                                        </div>
-                                    </div>
-
-                                    <div
-                                        x-data="{
-                                            hasErrors: '',
-                                            originalScores: {
-                                                score1: $wire.matrix[{{ $row->id }}][{{ $col->id }}]['for'],
-                                                score2: $wire.matrix[{{ $col->id }}][{{ $row->id }}]['for']
-                                            }
-                                        }"
-                                        x-init="$nextTick(() => { hasErrors = {{ json_encode($errors->isNotEmpty()) }} })"
-                                        class="absolute inset-0"
+        @if ($showPromote || $showRelegate)
+            <div class="flex flex-col items-center">
+                <div class="flex items-center justify-center gap-6 min-h-10">
+                    @if ($showPromote)
+                        <div class="flex flex-col items-end">
+                            <div class="flex items-center gap-1">
+                                <flux:label>Promote</flux:label>
+                                <flux:icon.arrow-up variant="micro" class="size-5 text-green-600" />
+                                @if (is_null($session->processed_at))
+                                    <flux:select
+                                        wire:model.live="promoteCount"
+                                        @class([
+                                            'cursor-not-allowed' => $session->processed_at
+                                        ])
+                                        :disabled="! is_null($session->processed_at)"
                                     >
-                                        @if (is_null($session->processed_at))
-                                            @if (! ($matrix[$row->id][$col->id]['original_for'] || $matrix[$col->id][$row->id]['original_for']))
-                                                <div class="flex items-center justify-center size-full">
-                                                    <flux:icon.plus-circle
-                                                        wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
-                                                        variant="solid"
-                                                        class="size-8 text-blue-300"
-                                                    />
-                                                </div>
-                                            @else
-                                                <div class="absolute top-0.5 right-0.5">
-                                                    <flux:icon.pencil-square
-                                                        wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
-                                                        variant="outline"
-                                                        class="size-5 text-blue-300"
-                                                    />
-                                                </div>
-                                            @endif
-                                            <button
-                                                type="button"
-                                                class="absolute inset-0 hover:bg-blue-400 opacity-10"
-                                                x-on:click.prevent="
-                                                    $dispatch('edit-result:open', { home: {{ $row->id }}, away: {{ $col->id }} })
-                                                "
-                                            ></button>
-
-                                        @endif
-                                    </div>
+                                        @foreach (range(0, $division->contestant_count - $division->relegate_count) as $i)
+                                            <flux:select.option>{{ $i }}</flux:select.option>
+                                        @endforeach
+                                    </flux:select>
+                                @else
+                                    <flux:heading class="!text-green-600">{{ $division->promote_count }}</flux:heading>
                                 @endif
-                            </flux:table.cell>
-                        @endforeach
-                    </flux:table.row>
-                @endforeach
+                            </div>
+                        </div>
+                    @endif
 
-                @teleport('body')
-                    <flux:modal
-                        name="edit-result"
-                        class="modal"
-                        x-on:close=""
-                        x-data="{
-                            hasErrors: false,
-                            open: false,
-                            loading: false,
-                            home: null,
-                            away: null,
+                    @if ($showRelegate)
+                        <div class="flex flex-col items-end">
+                            <div class="flex items-center gap-1">
+                                <flux:label>Relegate</flux:label>
+                                <flux:icon.arrow-down variant="mini" class="size-5 text-red-600" />
+                                @if (is_null($session->processed_at))
+                                    <flux:select
+                                        wire:model.live="relegateCount"
+                                        @class([
+                                            'cursor-not-allowed' => $session->processed_at
+                                        ])
+                                        :disabled="! is_null($session->processed_at)"
+                                    >
+                                        @foreach (range(0, $division->contestant_count - $division->promote_count) as $i)
+                                            <flux:select.option>{{ $i }}</flux:select.option>
+                                        @endforeach
+                                    </flux:select>
+                                @else
+                                    <flux:heading class="!text-red-600">{{ $division->relegate_count }}</flux:heading>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @endif
 
-                            init() {
-                                // when a cell requests the modal
-                                window.addEventListener('edit-result:open', async (e) => {
-                                    this.hasErrors = false;
-                                    this.home = e.detail.home
-                                    this.away = e.detail.away
+        @php
+            $tz = $session->timezone ?? $league->club->timezone ?? 'UTC';
 
-                                    // 1) open immediately
-                                    this.open = true
-                                    this.loading = true
-                                    $flux.modal('edit-result').show()
+            // MIN = session start (local date)
+            $minDate = $session->starts_at->timezone($tz)->toDateString();   // "YYYY-MM-DD"
 
-                                    // 2) now fetch/populate via Livewire
-                                    await $wire.openEdit(this.home, this.away)
+            // MAX candidates
+            $todayLocal = now()->timezone($tz);
+            $endLocalForMax = optional($session->ends_at)->timezone($tz);
 
-                                    // 3) swap skeleton -> form
-                                    this.loading = false
-                                })
+            $maxLocal = collect([$endLocalForMax, $todayLocal])->filter()->min(); // earliest of the two
+            $maxDate  = $maxLocal?->toDateString();
+        @endphp
 
-                                // when modal closes, reset state
-                                this.$el.addEventListener('close', () => {
-                                    this.open = false
-                                    this.loading = false
-                                    this.home = null
-                                    this.away = null
-                                })
-                            }
-                        }"
-                    >
-                        <!-- Skeleton -->
-                        <template x-if="loading">
-                            <x-modals.content>
-                                <x-slot:heading>{{ __('Submit Result') }}</x-slot:heading>
-                                <flux:skeleton.group animate="pulse">
+        <flux:accordion variant="reverse" class="mt-10">
+            <!-- Table -->
+            <flux:accordion.item expanded>
+                <flux:accordion.heading class="my-3" size="lg">Table</flux:accordion.heading>
 
-                                    <div>
-                                        <div class="flex items-center justify-center gap-2">
-                                            <flux:field>
-                                                <flux:label>{{ __('Match Date') }}</flux:label>
-                                                <flux:skeleton  class="h-10 w-40" />
-                                            </flux:field>
-                                            <flux:field>
-                                                <flux:label>{{ __('Time') }}</flux:label>
-                                                <flux:skeleton  class="h-10 w-[122px]" />
-                                            </flux:field>
-                                        </div>
-                                    </div>
-
-                                    <div class="space-y-2 mt-6">
-                                        <flux:text class="text-center">Best of {{ $league->best_of }} {{ Str::lower($league->tallyUnit->name) }}</flux:text>
-
-                                        <div class="flex flex-col items-center">
-                                            <!-- HOME -->
-                                            <table>
-                                                <tr>
-                                                    <td class="p-1 pl-0 pr-4">
-                                                        <flux:skeleton  class="h-10 w-8" />
-                                                    </td>
-                                                    <td class="p-1">
-                                                        <flux:skeleton  class="h-10 w-30" />
-                                                    </td>
-                                                    <td class="p-1 pr-0">
-                                                        <flux:skeleton  class="h-10 w-16" />
-                                                    </td>
-                                                </tr>
-
-                                                <!-- AWAY -->
-                                                <tr>
-                                                    <td class="p-1 pl-0 pr-4">
-                                                        <flux:skeleton  class="h-10 w-8" />
-                                                    </td>
-                                                    <td class="p-1">
-                                                        <flux:skeleton  class="h-10 w-30" />
-                                                    </td>
-                                                    <td class="p-1 pr-0">
-                                                        <flux:skeleton  class="h-10 w-16" />
-                                                    </td>
-                                                </tr>
-                                            </table>
-                                        </div>
-
-                                        <div class="flex flex-col items-center">
-                                            <flux:text class="text-center w-80 !text-xs">Tick a box if a player didn't turn up so their opponent can claim the points.</flux:text>
-                                        </div>
-                                    </div>
-
-                                </flux:skeleton.group>
-                                <x-slot:buttons>
-                                    <flux:skeleton animate="pulse" class="h-10 w-[75px]" />
-                                    <flux:skeleton animate="pulse" class="h-10 w-[65px]" />
-                                </x-slot:buttons>
-                            </x-modals.content>
-                        </template>
-
-                        <template x-if="!loading" x-cloak>
-                            @if($editingHomeId && $editingAwayId)
+                <flux:accordion.content>
+                    <div class="pt-2 pb-4">
+                        <x-ui.cards.table>
+                            <flux:table.columns class="bg-stone-50">
+                                <flux:table.column class="w-0"></flux:table.column>
+                                <flux:table.column sticky></flux:table.column>
+                                <flux:table.column class="w-[49px]" align="center">P</flux:table.column>
+                                <flux:table.column class="w-[49px]" align="center">W</flux:table.column>
+                                <flux:table.column class="w-[49px]" align="center">D</flux:table.column>
+                                <flux:table.column class="w-[49px]" align="center">L</flux:table.column>
+                                <flux:table.column class="w-[49px]" align="center">F</flux:table.column>
+                                <flux:table.column class="w-[49px]" align="center">A</flux:table.column>
+                                <flux:table.column class="w-[49px]" align="center">+/-</flux:table.column>
+                                <flux:table.column class="w-[49px]" align="center">Pts</flux:table.column>
+                            </flux:table.columns>
+                            <flux:table.rows class="!divide-y-0">
+                                <!-- Contestants -->
                                 @php
-                                    $homeId = $editingHomeId;
-                                    $awayId = $editingAwayId;
-                                    $homeContestant = $this->divisionContestants->firstWhere('id', $homeId);
-                                    $awayContestant = $this->divisionContestants->firstWhere('id', $awayId);
+                                    $standings = $division->calculateStandings()['standings'];
                                 @endphp
 
-                                <form wire:submit="save({{ $homeId }}, {{ $awayId }})" class="space-y-6">
-                                    <x-modals.content>
-                                        <x-slot:heading>{{ __('Submit Result') }}</x-slot:heading>
+                                @foreach ($standings as $i => $contestant)
+                                    @php
+                                        $curr = $contestant['rank'];
+                                        $prev = $standings[$i-1]['rank'] ?? null;
+                                        $next = $standings[$i+1]['rank'] ?? null;
+                                        $isTie = ($prev === $curr) || ($next === $curr);
+                                    @endphp
+                                    @if ($loop->index === $loop->count - $division->relegate_count && $loop->index !== $loop->count)
+                                        <flux:table.row>
+                                            <flux:table.cell colspan="10" class="!py-0 h-0.5 bg-red-500"></flux:table.cell>
+                                        </flux:table.row>
+                                    @endif
+                                    <flux:table.row wire:key="{{ $contestant['id'] }}">
+                                        <flux:table.cell style="height: 49px;">{{ $curr }}@if($isTie) =@endif</flux:table.cell>
+                                        <flux:table.cell>
+                                            <x-generic.table-contestant :$club :$contestant />
+                                        </flux:table.cell>
+                                        <flux:table.cell align="center" class="!text-zinc-900">{{ $contestant['played'] }}</flux:table.cell>
+                                        <flux:table.cell align="center" class="!text-zinc-900">{{ $contestant['won'] }}</flux:table.cell>
+                                        <flux:table.cell align="center" class="!text-zinc-900">{{ $contestant['drawn'] }}</flux:table.cell>
+                                        <flux:table.cell align="center" class="!text-zinc-900">{{ $contestant['lost'] }}</flux:table.cell>
+                                        <flux:table.cell align="center" class="!text-zinc-900">{{ $contestant['for'] }}</flux:table.cell>
+                                        <flux:table.cell align="center" class="!text-zinc-900">{{ $contestant['against'] }}</flux:table.cell>
+                                        <flux:table.cell align="center" class="!text-zinc-900">{{ $contestant['diff'] }}</flux:table.cell>
+                                        <flux:table.cell align="center" class="!text-zinc-900">{{ $contestant['points'] }}</flux:table.cell>
+                                    </flux:table.row>
+                                    @if ($loop->iteration !== $loop->count - $division->relegate_count && $loop->iteration !== $loop->count && $loop->iteration !== $division->promote_count)
+                                        <!-- <flux:table.row>
+                                            <flux:table.cell colspan="10" class="!py-0 border-t"></flux:table.cell>
+                                        </flux:table.row> -->
+                                    @endif
+                                    @if ($loop->iteration === $division->promote_count)
+                                        <flux:table.row>
+                                            <flux:table.cell colspan="10" class="!py-0 h-0.5 bg-green-500"></flux:table.cell>
+                                        </flux:table.row>
+                                    @endif
+                                @endforeach
+                            </flux:table.rows>
+                        </x-ui.cards.table>
+                    </div>
+                </flux:accordion.content>
+            </flux:accordion.item>
 
-                                        <div>
-                                            <div class="flex items-center justify-center gap-2">
-                                                <flux:field>
-                                                    <flux:label>{{ __('Match Date') }}</flux:label>
-                                                    <flux:date-picker
-                                                        wire:model="matrix.{{ $homeId }}.{{ $awayId }}.date"
-                                                        :min="$minDate"
-                                                        :max="$maxDate"
-                                                    />
-                                                </flux:field>
-                                                <flux:field>
-                                                    <flux:label>{{ __('Time') }}</flux:label>
-                                                    <flux:time-picker
-                                                        type="input"
-                                                        wire:model="matrix.{{ $homeId }}.{{ $awayId }}.time"
-                                                        time-format="12-hour"
-                                                        :dropdown="false"
-                                                    />
-                                                </flux:field>
-                                            </div>
+            <!-- Results -->
+            <flux:accordion.item expanded>
+                <flux:accordion.heading class="my-3" size="lg">Results</flux:accordion.heading>
 
-                                            @php
-                                                $dateKey = "matrix.$homeId.$awayId.date";
-                                                $timeKey = "matrix.$homeId.$awayId.time";
-                                                $dateErr = $errors->first($dateKey);
-                                                $timeErr = $errors->first($timeKey);
-                                                $msg = $dateErr ?: $timeErr;
-                                            @endphp
-
-                                            @if ($msg)
-                                                <div class="text-center">
-                                                    <flux:error :message="$msg" />
-                                                </div>
-                                            @endif
-                                        </div>
-
-                                        <div class="space-y-2 mt-6">
-                                            <flux:text class="text-center">Best of {{ $league->best_of }} {{ Str::lower($league->tallyUnit->name) }}</flux:text>
-
-                                            @php
-                                                $homeKey = "matrix.$homeId.$awayId";
-                                                $awayKey = "matrix.$awayId.$homeId";
-                                            @endphp
-
-                                            <div
-                                                wire:key="result-state-{{ $homeId }}-{{ $awayId }}"
-                                                x-data="{
-                                                    homeChecked: @entangle("matrix.$homeId.$awayId.attended"),
-                                                    awayChecked: @entangle("matrix.$awayId.$homeId.attended"),
-                                                    homeScore: @entangle("matrix.$homeId.$awayId.for"),
-                                                    awayScore: @entangle("matrix.$awayId.$homeId.for"),
-                                                    maxScore: {{ $this->maxTally }},
-
-                                                    setScores(side) {
-                                                        if (side === 'home' && this.homeChecked) {
-                                                            this.homeScore = 0;
-                                                            this.awayScore = this.maxScore;
-                                                        } else if (side === 'away' && this.awayChecked) {
-                                                            this.awayScore = 0;
-                                                            this.homeScore = this.maxScore;
-                                                        }
-                                                    },
-
-                                                    onHomeToggle() {
-                                                        this.homeChecked = !this.homeChecked;
-                                                        if (this.homeChecked) {
-                                                            this.awayChecked = false;
-                                                            this.setScores('home');
-                                                        } else {
-                                                            if (!this.awayChecked) {
-                                                                this.homeScore = '';
-                                                                this.awayScore = '';
-                                                            } else {
-                                                                this.setScores('away');
-                                                            }
-                                                        }
-                                                    },
-
-                                                    onAwayToggle() {
-                                                        this.awayChecked = !this.awayChecked;
-                                                        if (this.awayChecked) {
-                                                            this.homeChecked = false;
-                                                            this.setScores('away');
-                                                        } else {
-                                                            if (!this.homeChecked) {
-                                                                this.homeScore = '';
-                                                                this.awayScore = '';
-                                                            } else {
-                                                                this.setScores('home');
-                                                            }
-                                                        }
-                                                    }
-                                                }"
-                                                class="flex flex-col items-center"
-                                            >
-                                                <!-- HOME -->
-                                                <table>
-                                                    <tr>
-                                                        <td class="p-1 pl-0 pr-4">
-                                                            <flux:checkbox
-                                                                @click="onHomeToggle()"
-                                                                x-bind:checked="homeChecked"
-                                                                class="!-mt-px"
-                                                            />
-                                                        </td>
-                                                        <td class="p-1">
-                                                            <flux:heading
-                                                                class="text-right"
-                                                                x-bind:class="{ 'line-through text-gray-400': homeChecked }"
-                                                            >
-                                                                {{ $homeContestant->player->name }}
-                                                            </flux:heading>
-                                                        </td>
-                                                        <td class="p-1 pr-0">
-                                                            <flux:select
-                                                                x-bind:disabled="homeChecked || awayChecked"
-                                                                wire:model="{{ $homeKey }}.for"
-                                                            >
-                                                                <flux:select.option value="">-</flux:select.option>
-                                                                @for ($i = 0; $i <= $this->maxTally; $i++)
-                                                                    <flux:select.option value="{{ $i }}">{{ $i }}</flux:select.option>
-                                                                @endfor
-                                                            </flux:select>
-                                                        </td>
-                                                    </tr>
-
-                                                    <!-- AWAY -->
-                                                    <tr>
-                                                        <td class="p-1 pl-0 pr-4">
-                                                            <flux:checkbox
-                                                                @click="onAwayToggle()"
-                                                                x-bind:checked="awayChecked"
-                                                                class="!-mt-px"
-                                                            />
-                                                        </td>
-                                                        <td class="p-1">
-                                                            <flux:heading
-                                                                class="text-right"
-                                                                x-bind:class="{ 'line-through text-gray-400': awayChecked }"
-                                                            >
-                                                                {{ $awayContestant->player->name }}
-                                                            </flux:heading>
-                                                        </td>
-                                                        <td class="p-1 pr-0">
-                                                            <flux:select
-                                                                x-bind:disabled="homeChecked || awayChecked"
-                                                                wire:model="{{ $awayKey }}.for"
-                                                            >
-                                                                <flux:select.option value="">-</flux:select.option>
-                                                                @for ($i = 0; $i <= $this->maxTally; $i++)
-                                                                    <flux:select.option value="{{ $i }}">{{ $i }}</flux:select.option>
-                                                                @endfor
-                                                            </flux:select>
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                            </div>
-
-                                            @if ($errors->has('matrix.*.*.for') || $errors->has('matrix'))
-                                                <flux:error message="{{ __('Invalid Score') }}" class="text-center" />
-                                            @endif
-
+                <flux:accordion.content>
+                    <div class="pt-2">
+                        <x-ui.cards.table>
+                            <flux:table.columns class="bg-zinc-100">
+                                <flux:table.column class="w-full"></flux:table.column>
+                                <flux:table.column class="border-l min-w-[45px]"></flux:table.column>
+                                @foreach ($this->divisionContestants as $index => $col)
+                                    <flux:table.column wire:key="{{ $col['id'] }}" class="border-l min-w-[50px]" align="center">
+                                        <div class="flex flex-col items-center">
                                             <div class="flex flex-col items-center">
-                                                <flux:text class="text-center w-80 !text-xs">Tick a box if a player didn't turn up so their opponent can claim the points.</flux:text>
+                                                {{ $this->indexToLetterUpper($index) }}
                                             </div>
                                         </div>
+                                    </flux:table.column>
+                                @endforeach
+                            </flux:table.columns>
 
-                                        <x-slot:buttons>
-                                            <flux:button
-                                                wire:click="delete({{ $homeId }}, {{ $awayId }})"
-                                                type="button"
-                                                wire:loading.attr="disabled"
-                                                variant="danger"
-                                            >
-                                                {{ __('Delete') }}
-                                            </flux:button>
-                                            <flux:button
-                                                type="submit"
-                                                variant="primary"
-                                                :loading="false"
-                                            >
-                                                {{ __('Save') }}
-                                            </flux:button>
-                                        </x-slot:buttons>
-                                    </x-modals.content>
-                                </form>
-                            @endif
-                        </template>
-                    </flux:modal>
-                @endteleport
+                            <flux:table.rows>
+                                @foreach ($this->divisionContestants as $index => $row)
+                                    <flux:table.row wire:key="{{ $row['id'] }}">
+                                        <flux:table.cell style="height: 49px;">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <div class="flex-1 flex items-center justify-between gap-2">
+                                                    <div>
+                                                        <flux:heading class="flex items-center gap-1">
+                                                            <x-generic.member
+                                                                :$club
+                                                                :member="$row->player"
+                                                                memberId="{{ $row->player->clubs()->first()->pivot->club_player_id }}"
+                                                                :showUser="true"
+                                                                :showTelNo="false"
+                                                                :isLink="true"
+                                                            />
+                                                        </flux:heading>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-1">
+                                                    @if ($row['deleted_at'])
+                                                        <flux:badge color="red" size="sm" class="ml-2">WD</flux:badge>
+                                                    @endif
 
-            </flux:table.rows>
-        </flux:table>
+                                                    @if (is_null($session->processed_at))
+                                                        <flux:dropdown
+                                                            position="bottom"
+                                                            align="end"
+                                                        >
+                                                            <flux:button
+                                                                variant="subtle"
+                                                                icon="ellipsis-vertical"
+                                                                size="xs"
+                                                            />
+
+                                                            <flux:menu>
+                                                                @if ($row['deleted_at'])
+                                                                    <flux:menu.item
+                                                                        wire:click="reinstate({{ $row['id'] }})"
+                                                                        icon="circle-plus"
+                                                                    >
+                                                                        Reinstate
+                                                                    </flux:menu.item>
+                                                                @else
+                                                                    <flux:menu.item
+                                                                        wire:click="withdraw({{ $row['id'] }})"
+                                                                        icon="circle-minus"
+                                                                    >
+                                                                        Withdraw
+                                                                    </flux:menu.item>
+                                                                @endif
+
+                                                                @if ($division->contestant_count > 1)
+                                                                    <flux:menu.separator />
+
+                                                                    <flux:modal.trigger name="matrix-delete-{{ $row->id }}">
+                                                                        <flux:menu.item
+                                                                            variant="danger"
+                                                                            icon="trash"
+                                                                        >
+                                                                            Delete
+                                                                        </flux:menu.item>
+                                                                    </flux:modal.trigger>
+
+                                                                    @teleport('body')
+                                                                        <flux:modal name="matrix-delete-{{ $row->id }}" class="modal">
+                                                                            <form wire:submit="removeContestant({{ $row->id }})">
+                                                                                <x-modals.content>
+                                                                                    <x-slot:heading>{{ __('Remove Competitor') }}</x-slot:heading>
+                                                                                    <flux:text>Are you sure you wish to remove {{ $row->player->name }} from this box?</flux:text>
+                                                                                    <flux:text>All results involving them will be permanently deleted!</flux:text>
+                                                                                    <x-slot:buttons>
+                                                                                        <flux:button type="submit" variant="danger">{{ __('Remove') }}</flux:button>
+                                                                                    </x-slot:buttons>
+                                                                                </x-modals.content>
+                                                                            </form>
+                                                                        </flux:modal>
+                                                                    @endteleport
+                                                                @endif
+                                                            </flux:menu>
+                                                        </flux:dropdown>
+                                                    @endif
+
+                                                </div>
+                                            </div>
+                                        </flux:table.cell>
+                                        <flux:table.cell align="center" class="border-l bg-zinc-100">
+                                            <div class="font-medium text-gray-900">{{ $this->indexToLetterUpper($index) }}</div>
+                                        </flux:table.cell>
+                                        @foreach ($this->divisionContestants as $col)
+                                            <flux:table.cell
+                                                wire:key="cell-{{ $row->id }}-{{ $col->id }}"
+                                                class="relative border-l"
+                                            >
+                                                @if ($row->id !== $col->id)
+                                                    <div class="absolute inset-0 flex items-center justify-center">
+                                                        <div
+                                                            @class([
+                                                                'absolute inset-0 flex flex-col items-center justify-center',
+                                                                'opacity-50 bg-red-50' => $col['deleted_at'] || $row['deleted_at']
+                                                            ])
+                                                        >
+                                                            @if ($matrix[$row->id][$col->id]['original_for'] || $matrix[$col->id][$row->id]['original_for'])
+                                                                <div
+                                                                    @class([
+                                                                        'flex items-center text-zinc-900',
+                                                                    ])
+                                                                >
+                                                                    @if ($matrix[$row->id][$col->id]['original_attended'])
+                                                                        <span>!</span>
+                                                                    @endif
+                                                                    <span>{{ $matrix[$row->id][$col->id]['original_for'] }}-{{ $matrix[$col->id][$row->id]['original_for'] }}</span>
+                                                                    @if ($matrix[$col->id][$row->id]['original_attended'])
+                                                                        <span>!</span>
+                                                                    @endif
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+
+                                                    <div
+                                                        x-data="{
+                                                            hasErrors: '',
+                                                            originalScores: {
+                                                                score1: $wire.matrix[{{ $row->id }}][{{ $col->id }}]['for'],
+                                                                score2: $wire.matrix[{{ $col->id }}][{{ $row->id }}]['for']
+                                                            }
+                                                        }"
+                                                        x-init="$nextTick(() => { hasErrors = {{ json_encode($errors->isNotEmpty()) }} })"
+                                                        class="absolute inset-0"
+                                                    >
+                                                        @if (is_null($session->processed_at))
+                                                            @if (! ($matrix[$row->id][$col->id]['original_for'] || $matrix[$col->id][$row->id]['original_for']))
+                                                                <div class="flex items-center justify-center size-full">
+                                                                    <flux:icon.plus-circle
+                                                                        wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
+                                                                        variant="micro"
+                                                                        class="size-4 text-blue-300"
+                                                                    />
+                                                                </div>
+                                                            @else
+                                                                <div class="absolute top-0.5 right-0.5">
+                                                                    <flux:icon.pencil-square
+                                                                        wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
+                                                                        variant="micro"
+                                                                        class="size-3 text-blue-300"
+                                                                    />
+                                                                </div>
+                                                            @endif
+                                                            <button
+                                                                type="button"
+                                                                class="absolute inset-0 hover:bg-yellow-400 opacity-10"
+                                                                x-on:click.prevent="
+                                                                    $dispatch('edit-result:open', { home: {{ $row->id }}, away: {{ $col->id }} })
+                                                                "
+                                                            ></button>
+
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <div class="absolute inset-0 bg-zinc-200"></div>
+                                                @endif
+                                            </flux:table.cell>
+                                        @endforeach
+                                    </flux:table.row>
+                                @endforeach
+
+                                @teleport('body')
+                                    <flux:modal
+                                        name="edit-result"
+                                        class="modal"
+                                        x-on:close=""
+                                        x-data="{
+                                            hasErrors: false,
+                                            open: false,
+                                            loading: false,
+                                            home: null,
+                                            away: null,
+
+                                            init() {
+                                                // when a cell requests the modal
+                                                window.addEventListener('edit-result:open', async (e) => {
+                                                    this.hasErrors = false;
+                                                    this.home = e.detail.home
+                                                    this.away = e.detail.away
+
+                                                    // 1) open immediately
+                                                    this.open = true
+                                                    this.loading = true
+                                                    $flux.modal('edit-result').show()
+
+                                                    // 2) now fetch/populate via Livewire
+                                                    await $wire.openEdit(this.home, this.away)
+
+                                                    // 3) swap skeleton -> form
+                                                    this.loading = false
+                                                })
+
+                                                // when modal closes, reset state
+                                                this.$el.addEventListener('close', () => {
+                                                    this.open = false
+                                                    this.loading = false
+                                                    this.home = null
+                                                    this.away = null
+                                                })
+                                            }
+                                        }"
+                                    >
+                                        <!-- Skeleton -->
+                                        <template x-if="loading">
+                                            <x-modals.content>
+                                                <x-slot:heading>{{ __('Submit Result') }}</x-slot:heading>
+                                                <flux:skeleton.group animate="pulse">
+
+                                                    <div>
+                                                        <div class="flex items-center justify-center gap-2">
+                                                            <flux:field>
+                                                                <flux:label>{{ __('Match Date') }}</flux:label>
+                                                                <flux:skeleton  class="h-10 w-40" />
+                                                            </flux:field>
+                                                            <flux:field>
+                                                                <flux:label>{{ __('Time') }}</flux:label>
+                                                                <flux:skeleton  class="h-10 w-[122px]" />
+                                                            </flux:field>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="space-y-2 mt-6">
+                                                        <flux:text class="text-center">Best of {{ $league->best_of }} {{ Str::lower($league->tallyUnit->name) }}</flux:text>
+
+                                                        <div class="flex flex-col items-center">
+                                                            <!-- HOME -->
+                                                            <table>
+                                                                <tr>
+                                                                    <td class="p-1 pl-0 pr-4">
+                                                                        <flux:skeleton  class="h-10 w-8" />
+                                                                    </td>
+                                                                    <td class="p-1">
+                                                                        <flux:skeleton  class="h-10 w-30" />
+                                                                    </td>
+                                                                    <td class="p-1 pr-0">
+                                                                        <flux:skeleton  class="h-10 w-16" />
+                                                                    </td>
+                                                                </tr>
+
+                                                                <!-- AWAY -->
+                                                                <tr>
+                                                                    <td class="p-1 pl-0 pr-4">
+                                                                        <flux:skeleton  class="h-10 w-8" />
+                                                                    </td>
+                                                                    <td class="p-1">
+                                                                        <flux:skeleton  class="h-10 w-30" />
+                                                                    </td>
+                                                                    <td class="p-1 pr-0">
+                                                                        <flux:skeleton  class="h-10 w-16" />
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                        </div>
+
+                                                        <div class="flex flex-col items-center">
+                                                            <flux:text class="text-center w-80 !text-xs">Tick a box if a player didn't turn up so their opponent can claim the points.</flux:text>
+                                                        </div>
+                                                    </div>
+
+                                                </flux:skeleton.group>
+                                                <x-slot:buttons>
+                                                    <flux:skeleton animate="pulse" class="h-10 w-[75px]" />
+                                                    <flux:skeleton animate="pulse" class="h-10 w-[65px]" />
+                                                </x-slot:buttons>
+                                            </x-modals.content>
+                                        </template>
+
+                                        <template x-if="!loading" x-cloak>
+                                            <div>
+                                                @if($editingHomeId && $editingAwayId)
+                                                    @php
+                                                        $homeId = $editingHomeId;
+                                                        $awayId = $editingAwayId;
+                                                        $homeContestant = $this->divisionContestants->firstWhere('id', $homeId);
+                                                        $awayContestant = $this->divisionContestants->firstWhere('id', $awayId);
+                                                    @endphp
+
+                                                    <form wire:submit="save({{ $homeId }}, {{ $awayId }})" class="space-y-6">
+                                                        <x-modals.content>
+                                                            <x-slot:heading>{{ __('Submit Result') }}</x-slot:heading>
+
+                                                            <div>
+                                                                <div class="flex items-center justify-center gap-2">
+                                                                    <flux:field>
+                                                                        <flux:label>{{ __('Match Date') }}</flux:label>
+                                                                        <flux:date-picker
+                                                                            wire:model="matrix.{{ $homeId }}.{{ $awayId }}.date"
+                                                                            :min="$minDate"
+                                                                            :max="$maxDate"
+                                                                        />
+                                                                    </flux:field>
+                                                                    <flux:field>
+                                                                        <flux:label>{{ __('Time') }}</flux:label>
+                                                                        <flux:time-picker
+                                                                            type="input"
+                                                                            wire:model="matrix.{{ $homeId }}.{{ $awayId }}.time"
+                                                                            time-format="12-hour"
+                                                                            :dropdown="false"
+                                                                        />
+                                                                    </flux:field>
+                                                                </div>
+
+                                                                @php
+                                                                    $dateKey = "matrix.$homeId.$awayId.date";
+                                                                    $timeKey = "matrix.$homeId.$awayId.time";
+                                                                    $dateErr = $errors->first($dateKey);
+                                                                    $timeErr = $errors->first($timeKey);
+                                                                    $msg = $dateErr ?: $timeErr;
+                                                                @endphp
+
+                                                                @if ($msg)
+                                                                    <div class="text-center">
+                                                                        <flux:error :message="$msg" />
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+
+                                                            <div class="space-y-2 mt-6">
+                                                                <flux:text class="text-center">Best of {{ $league->best_of }} {{ Str::lower($league->tallyUnit->name) }}</flux:text>
+
+                                                                @php
+                                                                    $homeKey = "matrix.$homeId.$awayId";
+                                                                    $awayKey = "matrix.$awayId.$homeId";
+                                                                @endphp
+
+                                                                <div
+                                                                    wire:key="result-state-{{ $homeId }}-{{ $awayId }}"
+                                                                    x-data="{
+                                                                        homeChecked: @entangle("matrix.$homeId.$awayId.attended"),
+                                                                        awayChecked: @entangle("matrix.$awayId.$homeId.attended"),
+                                                                        homeScore: @entangle("matrix.$homeId.$awayId.for"),
+                                                                        awayScore: @entangle("matrix.$awayId.$homeId.for"),
+                                                                        maxScore: {{ $this->maxTally }},
+
+                                                                        setScores(side) {
+                                                                            if (side === 'home' && this.homeChecked) {
+                                                                                this.homeScore = 0;
+                                                                                this.awayScore = this.maxScore;
+                                                                            } else if (side === 'away' && this.awayChecked) {
+                                                                                this.awayScore = 0;
+                                                                                this.homeScore = this.maxScore;
+                                                                            }
+                                                                        },
+
+                                                                        onHomeToggle() {
+                                                                            this.homeChecked = !this.homeChecked;
+                                                                            if (this.homeChecked) {
+                                                                                this.awayChecked = false;
+                                                                                this.setScores('home');
+                                                                            } else {
+                                                                                if (!this.awayChecked) {
+                                                                                    this.homeScore = '';
+                                                                                    this.awayScore = '';
+                                                                                } else {
+                                                                                    this.setScores('away');
+                                                                                }
+                                                                            }
+                                                                        },
+
+                                                                        onAwayToggle() {
+                                                                            this.awayChecked = !this.awayChecked;
+                                                                            if (this.awayChecked) {
+                                                                                this.homeChecked = false;
+                                                                                this.setScores('away');
+                                                                            } else {
+                                                                                if (!this.homeChecked) {
+                                                                                    this.homeScore = '';
+                                                                                    this.awayScore = '';
+                                                                                } else {
+                                                                                    this.setScores('home');
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }"
+                                                                    class="flex flex-col items-center"
+                                                                >
+                                                                    <!-- HOME -->
+                                                                    <table>
+                                                                        <tr>
+                                                                            <td class="p-1 pl-0 pr-4">
+                                                                                <flux:checkbox
+                                                                                    @click="onHomeToggle()"
+                                                                                    x-bind:checked="homeChecked"
+                                                                                    class="!-mt-px"
+                                                                                />
+                                                                            </td>
+                                                                            <td class="p-1">
+                                                                                <flux:heading
+                                                                                    class="text-right"
+                                                                                    x-bind:class="{ 'line-through text-gray-400': homeChecked }"
+                                                                                >
+                                                                                    {{ $homeContestant->player->name }}
+                                                                                </flux:heading>
+                                                                            </td>
+                                                                            <td class="p-1 pr-0">
+                                                                                <flux:select
+                                                                                    x-bind:disabled="homeChecked || awayChecked"
+                                                                                    wire:model="{{ $homeKey }}.for"
+                                                                                >
+                                                                                    <flux:select.option value="">-</flux:select.option>
+                                                                                    @for ($i = 0; $i <= $this->maxTally; $i++)
+                                                                                        <flux:select.option value="{{ $i }}">{{ $i }}</flux:select.option>
+                                                                                    @endfor
+                                                                                </flux:select>
+                                                                            </td>
+                                                                        </tr>
+
+                                                                        <!-- AWAY -->
+                                                                        <tr>
+                                                                            <td class="p-1 pl-0 pr-4">
+                                                                                <flux:checkbox
+                                                                                    @click="onAwayToggle()"
+                                                                                    x-bind:checked="awayChecked"
+                                                                                    class="!-mt-px"
+                                                                                />
+                                                                            </td>
+                                                                            <td class="p-1">
+                                                                                <flux:heading
+                                                                                    class="text-right"
+                                                                                    x-bind:class="{ 'line-through text-gray-400': awayChecked }"
+                                                                                >
+                                                                                    {{ $awayContestant->player->name }}
+                                                                                </flux:heading>
+                                                                            </td>
+                                                                            <td class="p-1 pr-0">
+                                                                                <flux:select
+                                                                                    x-bind:disabled="homeChecked || awayChecked"
+                                                                                    wire:model="{{ $awayKey }}.for"
+                                                                                >
+                                                                                    <flux:select.option value="">-</flux:select.option>
+                                                                                    @for ($i = 0; $i <= $this->maxTally; $i++)
+                                                                                        <flux:select.option value="{{ $i }}">{{ $i }}</flux:select.option>
+                                                                                    @endfor
+                                                                                </flux:select>
+                                                                            </td>
+                                                                        </tr>
+                                                                    </table>
+                                                                </div>
+
+                                                                @if ($errors->has('matrix.*.*.for') || $errors->has('matrix'))
+                                                                    <flux:error message="{{ __('Invalid Score') }}" class="text-center" />
+                                                                @endif
+
+                                                                <div class="flex flex-col items-center">
+                                                                    <flux:text class="text-center w-80 !text-xs">Tick a box if a player didn't turn up so their opponent can claim the points.</flux:text>
+                                                                </div>
+                                                            </div>
+
+                                                            <x-slot:buttons>
+                                                                <flux:button
+                                                                    wire:click="delete({{ $homeId }}, {{ $awayId }})"
+                                                                    type="button"
+                                                                    wire:loading.attr="disabled"
+                                                                    variant="danger"
+                                                                >
+                                                                    {{ __('Delete') }}
+                                                                </flux:button>
+                                                                <flux:button
+                                                                    type="submit"
+                                                                    variant="primary"
+                                                                    :loading="false"
+                                                                >
+                                                                    {{ __('Save') }}
+                                                                </flux:button>
+                                                            </x-slot:buttons>
+                                                        </x-modals.content>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        </template>
+                                    </flux:modal>
+                                @endteleport
+
+                            </flux:table.rows>
+                        </x-ui.cards.table>
+                    </div>
+                </flux:accordion.content>
+            </flux:accordion.item>
+        </flux:accordion>
     </div>
+</x-ui.cards.mobile>
 
-    <div wire:loading wire:target.except="save, openEdit, delete" class="absolute inset-0 z-20 bg-white -my-3.5 opacity-50"></div>
-
-</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        Livewire.on('toast', ({ variant, text }) => {
+            // Flux global helper
+            $flux.toast({ variant, text })
+        })
+    })
+</script>

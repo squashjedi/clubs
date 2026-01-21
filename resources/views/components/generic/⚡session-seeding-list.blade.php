@@ -165,10 +165,10 @@ new class extends Component
     }
 
     #[Renderless]
-    public function sortItem(int $id, int $index): void
+    public function sortItem(int $item, int $position): void
     {
-        $entrant = $this->entrants->findOrFail($id);
-        $entrant->move($index);
+        $entrant = $this->entrants->findOrFail($item);
+        $entrant->move($position);
 
         $this->resetErrorBag();
 
@@ -271,7 +271,7 @@ new class extends Component
                 x-on:click="$flux.modal('add-entrant').show();"
                 variant="primary"
                 icon="plus"
-                x-bind:disabled="{{ ! $this->canAddEntrants }}"
+                x-bind:disabled="{{ json_encode(! $this->canAddEntrants) }}"
             >
                 Entrant
             </flux:button>
@@ -477,10 +477,14 @@ new class extends Component
                 @endteleport
             </div>
 
-            <div class="space-y-1" wire:sort="sortItem" style="counter-reset: seed-counter 0;">
+            <div
+                wire:sort="sortItem"
+                class="space-y-1"
+                style="counter-reset: seed-counter 0;"
+            >
                 {{-- Use simpler wire:key --}}
                 @foreach ($entrants as $entrant)
-                    <div wire:key="entrant-{{ $entrant->id }}"
+                    <div
                         wire:sort:item="{{ $entrant->id }}"
                         class="border rounded-md shadow-xs bg-white p-2 flex items-center gap-2 justify-between"
                         style="counter-increment: seed-counter;">
@@ -497,7 +501,7 @@ new class extends Component
                                 icon="grip"
                                 icon:variant="micro"
                                 class="!shrink-0"
-                                x-sort:handle
+                                wire:sort:handle
                             />
                             <div class="w-8 text-center text-xs text-zinc-500 before:content-['#'counter(seed-counter)]"></div>
                             <x-generic.entrant-tile :player="$entrant->player" />

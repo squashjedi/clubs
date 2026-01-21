@@ -51,24 +51,20 @@ new class extends Component
     }
 }; ?>
 
-<form wire:submit="save" class="space-y-6">
-    <flux:input wire:model="form.name" label="Club Name" class="max-w-sm" />
+<x-ui.cards.mobile>
+    <form wire:submit="save" class="space-y-6">
+        <flux:input wire:model="form.name" label="Club Name" class="max-w-sm" />
 
-    <flux:field class="max-w-sm">
-        <flux:label>Timezone</flux:label>
-        <flux:select wire:model="form.timezone" variant="listbox" searchable placeholder="Choose timezone..." clearable>
-            @foreach (config('timezones') as $tz)
-                <flux:select.option value="{{ $tz['timezone'] }}">{{ $tz['name'] }}</flux:select.option>
-            @endforeach
-        </flux:select>
-        <flux:error name="form.timezone" />
-    </flux:field>
+        <flux:field class="max-w-sm">
+            <flux:label>Timezone</flux:label>
+            <flux:select wire:model="form.timezone" variant="listbox" searchable placeholder="Choose timezone..." clearable>
+                @foreach (config('timezones') as $tz)
+                    <flux:select.option value="{{ $tz['timezone'] }}">{{ $tz['name'] }}</flux:select.option>
+                @endforeach
+            </flux:select>
+            <flux:error name="form.timezone" />
+        </flux:field>
 
-    <div class="flex">
-        @if ($is_edit)
-            <flux:button type="submit" variant="primary">{{ __('Update') }}</flux:button>
-        @else
-            <flux:button type="submit" variant="primary">{{ __('Create') }}</flux:button>
-        @endif
-    </div>
-</form>
+        <flux:button type="submit" variant="primary">{{ __('Save') }}</flux:button>
+    </form>
+</x-ui.cards.mobile>

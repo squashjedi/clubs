@@ -1,4 +1,6 @@
-import sort from '@alpinejs/sort'
+import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm'
 import '@tailwindplus/elements'
 
-Alpine.plugin(sort)
+window.Alpine = Alpine
+
+Livewire.start()
