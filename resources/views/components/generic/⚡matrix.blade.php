@@ -898,7 +898,6 @@ new class extends Component
                                                             @if (! ($matrix[$row->id][$col->id]['original_for'] || $matrix[$col->id][$row->id]['original_for']))
                                                                 <div class="flex items-center justify-center size-full">
                                                                     <flux:icon.plus-circle
-                                                                        wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
                                                                         variant="micro"
                                                                         class="size-4 text-blue-300"
                                                                     />
@@ -906,7 +905,6 @@ new class extends Component
                                                             @else
                                                                 <div class="absolute top-0.5 right-0.5">
                                                                     <flux:icon.pencil-square
-                                                                        wire:target="openEdit({{ $row->id }}, {{ $col->id }})"
                                                                         variant="micro"
                                                                         class="size-3 text-blue-300"
                                                                     />
@@ -916,7 +914,22 @@ new class extends Component
                                                                 type="button"
                                                                 class="absolute inset-0 hover:bg-yellow-400 opacity-10"
                                                                 x-on:click.prevent="
-                                                                    $dispatch('edit-result:open', { home: {{ $row->id }}, away: {{ $col->id }} })
+                                                                    $dispatch('edit-result:open', {
+                                                                        home: @js($row->id),
+                                                                        away: @js($col->id),
+                                                                        homeName: @js($row->player->name),
+                                                                        awayName: @js($col->player->name),
+
+                                                                        // scores from your Livewire-built matrix
+                                                                        homeScore: @js($matrix[$row->id][$col->id]['for']),
+                                                                        awayScore: @js($matrix[$col->id][$row->id]['for']),
+
+                                                                        // optional extra fields
+                                                                        date: @js($matrix[$row->id][$col->id]['date']),
+                                                                        time: @js($matrix[$row->id][$col->id]['time']),
+                                                                        homeNoShow: @js($matrix[$row->id][$col->id]['attended']),
+                                                                        awayNoShow: @js($matrix[$col->id][$row->id]['attended']),
+                                                                    })
                                                                 "
                                                             ></button>
 
@@ -934,13 +947,21 @@ new class extends Component
                                     <flux:modal
                                         name="edit-result"
                                         class="modal"
-                                        x-on:close=""
                                         x-data="{
                                             hasErrors: false,
                                             open: false,
                                             loading: false,
                                             home: null,
                                             away: null,
+                                            homeName: '',
+                                            awayName: '',
+
+                                            homeScore: null,
+                                            awayScore: null,
+                                            date: null,
+                                            time: null,
+                                            homeNoShow: false,
+                                            awayNoShow: false,
 
                                             init() {
                                                 // when a cell requests the modal
@@ -948,6 +969,17 @@ new class extends Component
                                                     this.hasErrors = false;
                                                     this.home = e.detail.home
                                                     this.away = e.detail.away
+                                                    this.homeName = e.detail.homeName
+                                                    this.awayName = e.detail.awayName
+
+                                                    this.homeScore = e.detail.homeScore
+                                                    this.awayScore = e.detail.awayScore
+                                                    this.date = e.detail.date
+                                                    this.time = e.detail.time
+                                                    this.homeNoShow = !!e.detail.homeNoShow
+                                                    this.awayNoShow = !!e.detail.awayNoShow
+
+                                                    console.log(this.homeName, this.awayName)
 
                                                     // 1) open immediately
                                                     this.open = true
@@ -962,11 +994,12 @@ new class extends Component
                                                 })
 
                                                 // when modal closes, reset state
-                                                this.$el.addEventListener('close', () => {
+                                                window.addEventListener('edit-result:close', () => {
+                                                    console.log('fired')
                                                     this.open = false
-                                                    this.loading = false
                                                     this.home = null
                                                     this.away = null
+                                                    this.loading = false
                                                 })
                                             }
                                         }"
@@ -1036,7 +1069,7 @@ new class extends Component
                                             </x-modals.content>
                                         </template>
 
-                                        <template x-if="!loading" x-cloak>
+                                        <template x-if="!loading">
                                             <div>
                                                 @if($editingHomeId && $editingAwayId)
                                                     @php
@@ -1046,7 +1079,10 @@ new class extends Component
                                                         $awayContestant = $this->divisionContestants->firstWhere('id', $awayId);
                                                     @endphp
 
-                                                    <form wire:submit="save({{ $homeId }}, {{ $awayId }})" class="space-y-6">
+                                                    <form x-on:submit.prevent="
+                                                        $js.syncToLivewire(home, away, homeScore, awayScore, homeNoShow, awayNoShow, date, time);
+                                                        $wire.save(home, away);
+                                                    " class="space-y-6">
                                                         <x-modals.content>
                                                             <x-slot:heading>{{ __('Submit Result') }}</x-slot:heading>
 
@@ -1055,7 +1091,7 @@ new class extends Component
                                                                     <flux:field>
                                                                         <flux:label>{{ __('Match Date') }}</flux:label>
                                                                         <flux:date-picker
-                                                                            wire:model="matrix.{{ $homeId }}.{{ $awayId }}.date"
+                                                                            x-model="date"
                                                                             :min="$minDate"
                                                                             :max="$maxDate"
                                                                         />
@@ -1064,7 +1100,7 @@ new class extends Component
                                                                         <flux:label>{{ __('Time') }}</flux:label>
                                                                         <flux:time-picker
                                                                             type="input"
-                                                                            wire:model="matrix.{{ $homeId }}.{{ $awayId }}.time"
+                                                                            x-model="time"
                                                                             time-format="12-hour"
                                                                             :dropdown="false"
                                                                         />
@@ -1097,29 +1133,25 @@ new class extends Component
                                                                 <div
                                                                     wire:key="result-state-{{ $homeId }}-{{ $awayId }}"
                                                                     x-data="{
-                                                                        homeChecked: @entangle("matrix.$homeId.$awayId.attended"),
-                                                                        awayChecked: @entangle("matrix.$awayId.$homeId.attended"),
-                                                                        homeScore: @entangle("matrix.$homeId.$awayId.for"),
-                                                                        awayScore: @entangle("matrix.$awayId.$homeId.for"),
                                                                         maxScore: {{ $this->maxTally }},
 
                                                                         setScores(side) {
-                                                                            if (side === 'home' && this.homeChecked) {
+                                                                            if (side === 'home' && this.homeNoShow) {
                                                                                 this.homeScore = 0;
                                                                                 this.awayScore = this.maxScore;
-                                                                            } else if (side === 'away' && this.awayChecked) {
+                                                                            } else if (side === 'away' && this.awayNoShow) {
                                                                                 this.awayScore = 0;
                                                                                 this.homeScore = this.maxScore;
                                                                             }
                                                                         },
 
                                                                         onHomeToggle() {
-                                                                            this.homeChecked = !this.homeChecked;
-                                                                            if (this.homeChecked) {
-                                                                                this.awayChecked = false;
+                                                                            this.homeNoShow = !this.homeNoShow;
+                                                                            if (this.homeNoShow) {
+                                                                                this.awayNoShow = false;
                                                                                 this.setScores('home');
                                                                             } else {
-                                                                                if (!this.awayChecked) {
+                                                                                if (!this.awayNoShow) {
                                                                                     this.homeScore = '';
                                                                                     this.awayScore = '';
                                                                                 } else {
@@ -1129,12 +1161,12 @@ new class extends Component
                                                                         },
 
                                                                         onAwayToggle() {
-                                                                            this.awayChecked = !this.awayChecked;
-                                                                            if (this.awayChecked) {
-                                                                                this.homeChecked = false;
+                                                                            this.awayNoShow = !this.awayNoShow;
+                                                                            if (this.awayNoShow) {
+                                                                                this.homeNoShow = false;
                                                                                 this.setScores('away');
                                                                             } else {
-                                                                                if (!this.homeChecked) {
+                                                                                if (!this.homeNoShow) {
                                                                                     this.homeScore = '';
                                                                                     this.awayScore = '';
                                                                                 } else {
@@ -1151,22 +1183,22 @@ new class extends Component
                                                                             <td class="p-1 pl-0 pr-4">
                                                                                 <flux:checkbox
                                                                                     @click="onHomeToggle()"
-                                                                                    x-bind:checked="homeChecked"
+                                                                                    x-bind:checked="homeNoShow"
                                                                                     class="!-mt-px"
                                                                                 />
                                                                             </td>
                                                                             <td class="p-1">
                                                                                 <flux:heading
                                                                                     class="text-right"
-                                                                                    x-bind:class="{ 'line-through text-gray-400': homeChecked }"
+                                                                                    x-bind:class="{ 'line-through text-gray-400': homeNoShow }"
                                                                                 >
-                                                                                    {{ $homeContestant->player->name }}
+                                                                                    <div x-text="homeName" />
                                                                                 </flux:heading>
                                                                             </td>
                                                                             <td class="p-1 pr-0">
                                                                                 <flux:select
-                                                                                    x-bind:disabled="homeChecked || awayChecked"
-                                                                                    wire:model="{{ $homeKey }}.for"
+                                                                                    x-bind:disabled="homeNoShow || awayNoShow"
+                                                                                    x-model="homeScore"
                                                                                 >
                                                                                     <flux:select.option value="">-</flux:select.option>
                                                                                     @for ($i = 0; $i <= $this->maxTally; $i++)
@@ -1181,22 +1213,22 @@ new class extends Component
                                                                             <td class="p-1 pl-0 pr-4">
                                                                                 <flux:checkbox
                                                                                     @click="onAwayToggle()"
-                                                                                    x-bind:checked="awayChecked"
+                                                                                    x-bind:checked="awayNoShow"
                                                                                     class="!-mt-px"
                                                                                 />
                                                                             </td>
                                                                             <td class="p-1">
                                                                                 <flux:heading
                                                                                     class="text-right"
-                                                                                    x-bind:class="{ 'line-through text-gray-400': awayChecked }"
+                                                                                    x-bind:class="{ 'line-through text-gray-400': awayNoShow }"
                                                                                 >
-                                                                                    {{ $awayContestant->player->name }}
+                                                                                    <div x-text="awayName" />
                                                                                 </flux:heading>
                                                                             </td>
                                                                             <td class="p-1 pr-0">
                                                                                 <flux:select
-                                                                                    x-bind:disabled="homeChecked || awayChecked"
-                                                                                    wire:model="{{ $awayKey }}.for"
+                                                                                    x-bind:disabled="homeNoShow || awayNoShow"
+                                                                                    x-model="awayScore"
                                                                                 >
                                                                                     <flux:select.option value="">-</flux:select.option>
                                                                                     @for ($i = 0; $i <= $this->maxTally; $i++)
@@ -1219,9 +1251,8 @@ new class extends Component
 
                                                             <x-slot:buttons>
                                                                 <flux:button
-                                                                    wire:click="delete({{ $homeId }}, {{ $awayId }})"
+                                                                    x-on:click="$wire.delete(home, away)"
                                                                     type="button"
-                                                                    wire:loading.attr="disabled"
                                                                     variant="danger"
                                                                 >
                                                                     {{ __('Delete') }}
@@ -1229,7 +1260,6 @@ new class extends Component
                                                                 <flux:button
                                                                     type="submit"
                                                                     variant="primary"
-                                                                    :loading="false"
                                                                 >
                                                                     {{ __('Save') }}
                                                                 </flux:button>
@@ -1252,6 +1282,21 @@ new class extends Component
 </x-ui.cards.mobile>
 
 <script>
+    this.$js.syncToLivewire = (home, away, homeScore, awayScore, homeNoShow, awayNoShow, date, time) => {
+        console.log(homeScore)
+        // write Alpine -> Livewire matrix
+        $wire.set(`matrix.${home}.${away}.for`, homeScore)
+        $wire.set(`matrix.${away}.${home}.for`, awayScore)
+
+        $wire.set(`matrix.${home}.${away}.date`, date)
+        $wire.set(`matrix.${home}.${away}.time`, time)
+
+        $wire.set(`matrix.${home}.${away}.attended`, homeNoShow)
+        $wire.set(`matrix.${away}.${home}.attended`, awayNoShow)
+
+        console.log(homeScore)
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         Livewire.on('toast', ({ variant, text }) => {
             // Flux global helper
