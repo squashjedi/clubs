@@ -6,8 +6,6 @@
 
         <title>{{ $title ?? config('app.name') }}</title>
 
-        @livewireStyles
-
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         @fluxAppearance
@@ -22,7 +20,5 @@
         @endpersist
 
         @fluxScripts
-
-        @livewireScriptConfig
     </body>
 </html>
