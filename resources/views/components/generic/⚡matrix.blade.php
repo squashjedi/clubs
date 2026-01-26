@@ -42,25 +42,11 @@ new class extends Component
     public ?int $editingHomeId = null;
     public ?int $editingAwayId = null;
 
-    public function openEdit(int $homeId, int $awayId): void
+    public function setEditingPair(int $homeId, int $awayId): void
     {
         $this->editingHomeId = $homeId;
         $this->editingAwayId = $awayId;
-
-        // Reset to original values when opening
-        $this->matrix[$homeId][$awayId]['for'] = $this->matrix[$homeId][$awayId]['original_for'];
-        $this->matrix[$homeId][$awayId]['attended'] = $this->matrix[$homeId][$awayId]['original_attended'];
-        $this->matrix[$homeId][$awayId]['date'] = $this->matrix[$homeId][$awayId]['original_date'];
-        $this->matrix[$homeId][$awayId]['time'] = $this->matrix[$homeId][$awayId]['original_time'];
-
-        $this->matrix[$awayId][$homeId]['for'] = $this->matrix[$awayId][$homeId]['original_for'];
-        $this->matrix[$awayId][$homeId]['attended'] = $this->matrix[$awayId][$homeId]['original_attended'];
-        $this->matrix[$awayId][$homeId]['date'] = $this->matrix[$awayId][$homeId]['original_date'];
-        $this->matrix[$awayId][$homeId]['time'] = $this->matrix[$awayId][$homeId]['original_time'];
-
         $this->resetErrorBag();
-
-        $this->dispatch('open-edit-result');
     }
 
     public function mount()
@@ -914,6 +900,8 @@ new class extends Component
                                                                 type="button"
                                                                 class="absolute inset-0 hover:bg-yellow-400 opacity-10"
                                                                 x-on:click.prevent="
+                                                                    $flux.modal('edit-result').show();
+                                                                    $wire.setEditingPair({{ $row->id }}, {{ $col->id }});
                                                                     $dispatch('edit-result:open', {
                                                                         home: @js($row->id),
                                                                         away: @js($col->id),
@@ -987,7 +975,7 @@ new class extends Component
                                                     $flux.modal('edit-result').show()
 
                                                     // 2) now fetch/populate via Livewire
-                                                    await $wire.openEdit(this.home, this.away)
+                                                    await $wire.setEditingPair(this.home, this.away)
 
                                                     // 3) swap skeleton -> form
                                                     this.loading = false
@@ -1079,10 +1067,7 @@ new class extends Component
                                                         $awayContestant = $this->divisionContestants->firstWhere('id', $awayId);
                                                     @endphp
 
-                                                    <form x-on:submit.prevent="
-                                                        $js.syncToLivewire(home, away, homeScore, awayScore, homeNoShow, awayNoShow, date, time);
-                                                        $wire.save(home, away);
-                                                    " class="space-y-6">
+                                                    <div class="space-y-6">
                                                         <x-modals.content>
                                                             <x-slot:heading>{{ __('Submit Result') }}</x-slot:heading>
 
@@ -1251,21 +1236,32 @@ new class extends Component
 
                                                             <x-slot:buttons>
                                                                 <flux:button
-                                                                    x-on:click="$wire.delete(home, away)"
-                                                                    type="button"
+                                                                    x-on:click="loading = true;$wire.delete(home, away).finally(() => loading = false)"
+                                                                    type="submit"
                                                                     variant="danger"
+                                                                    x-data="{ loading: false }"
+                                                                    x-bind:disabled="loading"
+                                                                    x-bind:loading="loading"
                                                                 >
                                                                     {{ __('Delete') }}
                                                                 </flux:button>
                                                                 <flux:button
+                                                                    x-on:click="
+                                                                        loading = true;
+                                                                        $js.syncToLivewire(home, away, homeScore, awayScore, homeNoShow, awayNoShow, date, time);
+                                                                        $wire.save(home, away).finally(() => loading = false);
+                                                                    "
                                                                     type="submit"
                                                                     variant="primary"
+                                                                    x-data="{ loading: false }"
+                                                                    x-bind:disabled="loading"
+                                                                    x-bind:loading="loading"
                                                                 >
                                                                     {{ __('Save') }}
                                                                 </flux:button>
                                                             </x-slot:buttons>
                                                         </x-modals.content>
-                                                    </form>
+                                                    </div>
                                                 @endif
                                             </div>
                                         </template>
