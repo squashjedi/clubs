@@ -532,8 +532,8 @@
     }
     return null;
   }
-  function getUriPrefix() {
-    return document.querySelector("[data-uri-prefix]")?.getAttribute("data-uri-prefix") ?? window.livewireScriptConfig["uriPrefix"] ?? null;
+  function getModuleUrl() {
+    return document.querySelector("[data-module-url]")?.getAttribute("data-module-url") ?? window.livewireScriptConfig["moduleUrl"] ?? null;
   }
   function getUpdateUri() {
     return document.querySelector("[data-update-uri]")?.getAttribute("data-update-uri") ?? window.livewireScriptConfig["uri"] ?? null;
@@ -4666,6 +4666,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     calls = null;
     payload = null;
     responsePayload = null;
+    pendingReturns = [];
+    pendingReturnsMeta = {};
     interceptors = [];
     cancelled = false;
     request = null;
@@ -4794,10 +4796,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
           onRender: (callback) => interceptor2.onRender = callback
         });
       });
-      let returns = this.responsePayload.effects["returns"] || [];
-      let returnsMeta = this.responsePayload.effects["returnsMeta"] || {};
-      this.resolveActionPromises(returns, returnsMeta);
-      this.invokeOnFinish();
+      this.pendingReturns = this.responsePayload.effects["returns"] || [];
+      this.pendingReturnsMeta = this.responsePayload.effects["returnsMeta"] || {};
     }
     invokeOnSync() {
       this.interceptors.forEach((interceptor2) => interceptor2.onSync());
@@ -4806,9 +4806,9 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       this.interceptors.forEach((interceptor2) => interceptor2.onEffect());
     }
     async invokeOnMorph() {
-      this.interceptors.forEach(async (interceptor2) => {
-        await interceptor2.onMorph();
-      });
+      await Promise.all(
+        this.interceptors.map((interceptor2) => interceptor2.onMorph())
+      );
     }
     invokeOnRender() {
       this.interceptors.forEach((interceptor2) => interceptor2.onRender());
@@ -4904,7 +4904,13 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       let name = this.name;
       let params = JSON.stringify(this.params);
       let metadata = JSON.stringify(this.metadata);
-      return window.btoa(String.fromCharCode(...new TextEncoder().encode(componentId + name + params + metadata)));
+      let bytes = new TextEncoder().encode(componentId + name + params + metadata);
+      let binary = "";
+      let chunkSize = 8192;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      return window.btoa(binary);
     }
     isAsync() {
       let asyncMethods = this.component.snapshot.memo?.async || [];
@@ -5260,9 +5266,12 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
           };
         }
       });
+      let cachedOptions = null;
       Object.defineProperty(request, "options", {
         get() {
-          return {
+          if (cachedOptions)
+            return cachedOptions;
+          cachedOptions = {
             method: "POST",
             body: JSON.stringify(request.payload),
             headers: {
@@ -5271,6 +5280,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
             },
             signal: request.controller.signal
           };
+          return cachedOptions;
         }
       });
     });
@@ -5369,7 +5379,14 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
                   if (message.isCancelled())
                     return;
                   message.invokeOnMorph().finally(() => {
-                    setTimeout(() => {
+                    if (!message.isCancelled()) {
+                      message.resolveActionPromises(
+                        message.pendingReturns,
+                        message.pendingReturnsMeta
+                      );
+                      message.invokeOnFinish();
+                    }
+                    requestAnimationFrame(() => {
                       if (message.isCancelled())
                         return;
                       message.invokeOnRender();
@@ -5833,8 +5850,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   on2("effect", ({ component, effects }) => {
     let scriptModuleHash = effects.scriptModule;
     if (scriptModuleHash) {
-      let encodedName = component.name.replace(".", "--").replace("::", "---").replace(":", "----");
-      let path = `${getUriPrefix()}/js/${encodedName}.js?v=${scriptModuleHash}`;
+      let encodedName = component.name.replace(/\./g, "--").replace(/::/g, "---").replace(/:/g, "----");
+      let path = `${getModuleUrl()}/js/${encodedName}.js?v=${scriptModuleHash}`;
       pendingComponentAssets.set(component, Alpine.reactive({
         loading: true,
         afterLoaded: []
@@ -13308,6 +13325,9 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       return callback();
     if (!fromEl.querySelector("[wire\\:transition]") && !toEl.querySelector("[wire\\:transition]"))
       return callback();
+    if (typeof document.startViewTransition !== "function") {
+      return callback();
+    }
     let style = document.createElement("style");
     style.textContent = `
         @media (prefers-reduced-motion: reduce) {
@@ -13333,11 +13353,19 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     if (options.type) {
       transitionConfig.types = [options.type];
     }
-    let transition2 = document.startViewTransition(transitionConfig);
-    transition2.finished.finally(() => {
-      style.remove();
-    });
-    await transition2.updateCallbackDone;
+    try {
+      let transition2 = document.startViewTransition(transitionConfig);
+      transition2.finished.finally(() => {
+        style.remove();
+      });
+      await transition2.updateCallbackDone;
+    } catch (e) {
+      let transition2 = document.startViewTransition(() => callback());
+      transition2.finished.finally(() => {
+        style.remove();
+      });
+      await transition2.updateCallbackDone;
+    }
   }
 
   // js/morph.js
@@ -14134,16 +14162,16 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   var loadedStyles = /* @__PURE__ */ new Set();
   on2("effect", ({ component, effects }) => {
     if (effects.styleModule) {
-      let encodedName = component.name.replace(".", "--").replace("::", "---").replace(":", "----");
-      let path = `${getUriPrefix()}/css/${encodedName}.css?v=${effects.styleModule}`;
+      let encodedName = component.name.replace(/\./g, "--").replace(/::/g, "---").replace(/:/g, "----");
+      let path = `${getModuleUrl()}/css/${encodedName}.css?v=${effects.styleModule}`;
       if (!loadedStyles.has(path)) {
         loadedStyles.add(path);
         injectStylesheet(path);
       }
     }
     if (effects.globalStyleModule) {
-      let encodedName = component.name.replace(".", "--").replace("::", "---").replace(":", "----");
-      let path = `${getUriPrefix()}/css/${encodedName}.global.css?v=${effects.globalStyleModule}`;
+      let encodedName = component.name.replace(/\./g, "--").replace(/::/g, "---").replace(/:/g, "----");
+      let path = `${getModuleUrl()}/css/${encodedName}.global.css?v=${effects.globalStyleModule}`;
       if (!loadedStyles.has(path)) {
         loadedStyles.add(path);
         injectStylesheet(path);
@@ -14212,7 +14240,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
             let expression = directive3.expression;
             if (livewireOptions?.defaultParams !== void 0 && !expression.includes("(")) {
               let params = Array.isArray(livewireOptions.defaultParams) ? livewireOptions.defaultParams : [livewireOptions.defaultParams];
-              expression = `${expression}(${params.map((p) => JSON.stringify(p)).join(", ")})`;
+              expression = expression + "(" + params.map((p) => JSON.stringify(p)).join(", ") + ")";
             }
             evaluateActionExpression(el, expression, { scope: { $event: e } });
           });
@@ -14332,7 +14360,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     ];
   }
   function whenTargetsArePartOfRequest(component, el, targets, inverted, [startLoading, endLoading]) {
-    return interceptMessage(({ message, onSend, onFinish }) => {
+    return interceptMessage(({ message, onSend, onSuccess, onFinish }) => {
       if (component !== message.component)
         return;
       let island = closestIsland(el);
@@ -14343,14 +14371,26 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         return;
       }
       let matches3 = true;
+      let cleared = false;
       onSend(({ payload }) => {
         if (targets.length > 0 && containsTargets(payload, targets) === inverted) {
           matches3 = false;
         }
         matches3 && startLoading();
       });
+      onSuccess(({ onEffect }) => {
+        onEffect(() => {
+          if (matches3 && !cleared) {
+            endLoading();
+            cleared = true;
+          }
+        });
+      });
       onFinish(() => {
-        matches3 && endLoading();
+        if (matches3 && !cleared) {
+          endLoading();
+          cleared = true;
+        }
       });
     });
   }
