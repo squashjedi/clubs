@@ -36,31 +36,43 @@ new class extends Component
     #[Url]
     public $sortDirection = 'desc';
 
+    public int $perPage = 20;
+
     #[On('delete')]
     public function delete() {}
 
     public function resetList()
     {
         $this->reset('searchId', 'searchPlayer', 'searchGender', 'searchUser', 'sortBy', 'sortDirection');
+        $this->resetPerPage();
+    }
+
+    public function resetPerPage()
+    {
+        $this->perPage = 20;
     }
 
     public function updatedSearchId()
     {
+        $this->resetPerPage();
         $this->resetPage();
     }
 
     public function updatedSearchPlayer()
     {
+        $this->resetPerPage();
         $this->resetPage();
     }
 
     public function updatedSearchGender()
     {
+        $this->resetPerPage();
         $this->resetPage();
     }
 
     public function updatedSearchUser()
     {
+        $this->resetPerPage();
         $this->resetPage();
     }
 
@@ -79,7 +91,13 @@ new class extends Component
             $this->sortDirection = 'asc';
         }
 
+        $this->resetPerPage();
         $this->resetPage();
+    }
+
+    public function loadMore()
+    {
+        $this->perPage += 20;
     }
 
     /**
@@ -202,7 +220,7 @@ new class extends Component
 
         // Also eager-load invitation; sorting already handled above
         return $query
-            ->paginate(20);
+                ->paginate($this->perPage);
     }
 }; ?>
 
@@ -234,7 +252,8 @@ new class extends Component
         </flux:radio.group>
 
         <div class="relative">
-            <flux:table :paginate="$this->players">
+            <flux:table>
+
                 <flux:table.columns>
                     <flux:table.column sortable :sorted="$sortBy === 'club_player_id'" :direction="$sortDirection" wire:click="sort('club_player_id')" class="w-20">#</flux:table.column>
                     <flux:table.column sortable :sorted="$sortBy === 'name'" :direction="$sortDirection" wire:click="sort('name')">Name</flux:table.column>
@@ -279,8 +298,20 @@ new class extends Component
                     </flux:table.column>
                 </flux:table.columns>
 
+                <flux:table.rows class="hidden" wire:loading.class.remove="hidden" wire:target="searchId,searchPlayer,searchGender,searchUser,searchPlayerStatus,sort">
+                    @for ($i = 0; $i < 8; $i++)
+                        <flux:table.row>
+                            <flux:table.cell class="w-20"><flux:skeleton class="h-6 w-full" /></flux:table.cell>
+                            <flux:table.cell><flux:skeleton class="h-6 w-full" /></flux:table.cell>
+                            <flux:table.cell class="w-24"><flux:skeleton class="h-6 w-full" /></flux:table.cell>
+                            <flux:table.cell><flux:skeleton class="h-6 w-full" /></flux:table.cell>
+                            <flux:table.cell class="w-0"><flux:skeleton class="h-6 w-full" /></flux:table.cell>
+                        </flux:table.row>
+                    @endfor
+                </flux:table.rows>
+
                 @if ($this->players->total() > 0)
-                    <flux:table.rows>
+                    <flux:table.rows wire:loading.class="hidden" wire:target="searchId,searchPlayer,searchGender,searchUser,searchPlayerStatus,sort">
                         @foreach ($this->players as $player)
                             <livewire:tables.rows.club-admin-players-row :$club :$player :key="$player->id" />
                         @endforeach
@@ -288,11 +319,25 @@ new class extends Component
                 @endif
             </flux:table>
 
-            @if ($this->players->total() === 0)
-                <x-tables.items-not-found colspan="5" collectionName="{{ $searchPlayerStatus->label() }} members" />
+            @if ($this->players->hasMorePages())
+                <div
+                    wire:loading.remove
+                    x-data="{ armed: false }"
+                    x-init="const scroller = $el.closest('ui-table-scroll-area'); const target = scroller ?? window; target.addEventListener('scroll', () => { armed = true }, { once: true })"
+                    x-intersect="if (armed) $wire.loadMore()"
+                    class="py-4"
+                ></div>
             @endif
 
-            <div wire:loading class="absolute inset-0 bg-white opacity-50" />
+            <div wire:loading.flex wire:target="loadMore" class="flex justify-center py-4">
+                <flux:icon.loading class="size-8 opacity-50" />
+            </div>
+
+            @if ($this->players->total() === 0)
+                <div wire:loading.remove wire:target="searchId,searchPlayer,searchGender,searchUser,searchPlayerStatus,sort">
+                    <x-tables.items-not-found colspan="5" collectionName="{{ $searchPlayerStatus->label() }} members" />
+                </div>
+            @endif
         </div>
     @endif
 </x-ui.cards.mobile>
