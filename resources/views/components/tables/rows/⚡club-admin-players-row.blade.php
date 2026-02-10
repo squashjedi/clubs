@@ -81,7 +81,6 @@ new class extends Component {
             size="sm"
             variant="subtle"
             wire:navigate
-            x-on:click="const scroller = $el.closest('ui-table-scroll-area'); if (scroller) { scroller.scrollTo({ top: 0, left: 0 }); scroller.setAttribute('data-scroll-x', '0'); scroller.setAttribute('data-scroll-y', '0'); } window.scrollTo(0, 0)"
         />
     </flux:table.cell>
 </flux:table.row>
