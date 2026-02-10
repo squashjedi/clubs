@@ -33,7 +33,7 @@ new class extends Component
 <flux:select
     variant="listbox"
     wire:model.change="selectedClub"
-    class="max-w-36 -ml-4 sm:-ml-6 lg:-ml-8 style-select-club"
+    class="-ml-4 sm:-ml-6 lg:-ml-8 !max-w-80"
 >
     @foreach ($clubs as $club)
         <flux:select.option value="{{ $club->id }}">{{ $club->name }}</flux:select.option>

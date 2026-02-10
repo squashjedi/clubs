@@ -1008,6 +1008,7 @@ new class extends Component
         $this->structure = $this->buildStructure();
     }
 
+    #[Renderless]
     public function sortSlot(int $rank, int $targetIndex, int $targetTierIndex, int $targetDivisionIndex): void
     {
         $hit = $this->findStructureSlotByRank($rank);

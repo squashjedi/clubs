@@ -98,6 +98,8 @@
                             </ul>
                         </li>
                     </ul>
+                    <!-- Profile dropdown -->
+                    <x-auth-dropdown-menu class="bg-gray-700 rounded-lg profile-dark" />
                 </nav>
             </div>
         </div>
@@ -126,18 +128,11 @@
                         <livewire:selects.club-admin-clubs-select :$club />
                         <flux:link
                             href="{{ route('club', [$club]) }}"
-                            class="text-sm"
+                            class="text-sm text-white"
                             wire:navigate
                         >
-                            Club Site
+                            Club
                         </flux:link>
-                    </div>
-                    <div class="flex items-center gap-x-4 lg:gap-x-6">
-                        <!-- Separator -->
-                        <div aria-hidden="true" class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-900/10 dark:lg:bg-gray-100/10"></div>
-
-                        <!-- Profile dropdown -->
-                        <x-auth-dropdown-menu class="bg-gray-700 rounded-lg profile-dark" />
                     </div>
                 </div>
             </div>
