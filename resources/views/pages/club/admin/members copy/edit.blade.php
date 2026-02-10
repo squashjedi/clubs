@@ -17,7 +17,7 @@ new #[Layout('layouts.club-admin')] class extends Component
     }
 }; ?>
 
-<div class="space-y-main">
+<div class="space-y-main" x-data x-init="window.scrollTo(0, 0)">
     <flux:breadcrumbs>
         <flux:breadcrumbs.item href="{{ route('club.admin', [$club]) }}" wire:navigate>Dashboard</flux:breadcrumbs.item>
         <flux:breadcrumbs.item href="{{ route('club.admin.members', [$club]) }}" wire:navigate>Members</flux:breadcrumbs.item>
