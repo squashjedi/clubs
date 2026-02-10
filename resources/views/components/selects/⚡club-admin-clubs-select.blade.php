@@ -18,6 +18,9 @@ new class extends Component
     public function updatedSelectedClub($clubId)
     {
         $club = Auth::user()->clubsAdmin()->find($clubId);
+        if (! $club) {
+            return;
+        }
         $this->redirectRoute('club.admin', [$club], navigate: true);
     }
 
@@ -32,7 +35,7 @@ new class extends Component
 
 <flux:select
     variant="listbox"
-    wire:model.change="selectedClub"
+    wire:model.live="selectedClub"
     class="-ml-4 sm:-ml-6 lg:-ml-8 !max-w-80"
 >
     @foreach ($clubs as $club)
