@@ -87,7 +87,9 @@ new class extends Component {
 
         $this->form->update();
 
-        $this->redirectRoute('club.admin.players.edit', ['club' => $this->club, 'player' => $this->player], navigate: true);
+        $this->resetPlayer();
+
+        // $this->redirectRoute('club.admin.players.edit', ['club' => $this->club, 'player' => $this->player], navigate: true);
 
         Flux::toast(
             variant: 'success',
@@ -118,7 +120,7 @@ new class extends Component {
     public function with(): array
     {
         return [
-            'isTrashed' => ! is_null($this->player?->pivot->deleted_at),
+            'isTrashed' => ! is_null($this->player?->pivot?->deleted_at),
             'hasUser' => $this->player?->users()->exists(),
         ];
     }
@@ -198,8 +200,6 @@ new class extends Component {
                             wire:model="form.first_name"
                             label="First Name"
                             class="max-w-sm"
-                            x-ref="first_name"
-                            x-init="if (!{{ $isEdit ? 'true' : 'false' }} && !window.matchMedia('(max-width: 640px)').matches) $refs.first_name.focus()"
                             :disabled="$hasUser"
                         />
                         <flux:input wire:model="form.last_name" label="Last Name" class="max-w-sm"  :disabled="$hasUser" />
