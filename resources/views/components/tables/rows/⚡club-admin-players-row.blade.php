@@ -74,7 +74,15 @@ new class extends Component {
         <livewire:buttons.invite-club-player-button :$club :$player :isTableView="true" />
     </flux:table.cell>
     <flux:table.cell align="end">
-        <flux:button href="{{ route('club.admin.players.edit', [$club, $player]) }}" icon="pencil-square" icon:variant="outline" size="sm" variant="subtle" wire:navigate />
+        <flux:button
+            href="{{ route('club.admin.players.edit', [$club, $player]) }}"
+            icon="pencil-square"
+            icon:variant="outline"
+            size="sm"
+            variant="subtle"
+            wire:navigate
+            x-on:click="const scroller = $el.closest('ui-table-scroll-area'); if (scroller) { scroller.scrollTo({ top: 0, left: 0 }); scroller.setAttribute('data-scroll-x', '0'); scroller.setAttribute('data-scroll-y', '0'); } window.scrollTo(0, 0)"
+        />
     </flux:table.cell>
 </flux:table.row>
 
