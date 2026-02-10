@@ -151,6 +151,12 @@ ui-select#search-club {
     }
 }
 
+.lw-navigating body {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 80ms ease;
+}
+
 /* dialog {
     @apply w-auto max-w-[576px] min-[624px]:mx-auto min-[0px]:mx-6;
 } */

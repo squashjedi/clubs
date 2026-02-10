@@ -22,5 +22,5 @@ new #[Layout('layouts.club-admin')] class extends Component
         <flux:button href="{{ route('club.admin.leagues.create', [ $club ]) }}" icon="plus" variant="primary" wire:navigate>{{ __("League") }}</flux:button>
     </div>
 
-    <livewire:tables.club-admin-leagues-table lazy :$club />
+    <livewire:tables.club-admin-leagues-table :$club />
 </div>
