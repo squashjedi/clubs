@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="min-h-screen bg-zinc-50 dark:bg-zinc-800">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="min-h-dvh bg-zinc-50 dark:bg-zinc-800">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,7 @@
 
         @fluxAppearance
     </head>
-    <body class="min-h-screen">
+    <body class="min-h-dvh">
         {{ $slot }}
 
         @persist("toast")

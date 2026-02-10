@@ -30,5 +30,5 @@ new #[Layout('layouts.club-admin')] class extends Component
         </div>
     </x-headings.page-heading>
 
-    <livewire:tables.club-admin-players-table :$club />
+    <livewire:tables.club-admin-players-table lazy :$club />
 </div>
