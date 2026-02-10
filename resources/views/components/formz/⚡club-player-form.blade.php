@@ -199,7 +199,7 @@ new class extends Component {
                             label="First Name"
                             class="max-w-sm"
                             x-ref="first_name"
-                            x-init="$refs.first_name.focus()"
+                            x-init="if (!@js($isEdit) && !window.matchMedia('(max-width: 640px)').matches) $refs.first_name.focus()"
                             :disabled="$hasUser"
                         />
                         <flux:input wire:model="form.last_name" label="Last Name" class="max-w-sm"  :disabled="$hasUser" />
